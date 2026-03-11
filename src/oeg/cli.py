@@ -10,6 +10,7 @@ from oeg.analysis.reporting import aggregate_comparison
 from oeg.generators import FileReplayGenerationProvider
 from oeg.generators import GenerationRequest
 from oeg.generators import OfflineGenerationPipeline
+from oeg.paths import default_datasets_dir
 from oeg.paths import default_generated_dir
 from oeg.paths import default_runs_dir
 from oeg.paths import sample_blue_coa_a_path
@@ -30,6 +31,7 @@ from oeg.simulation.engine import run_scenario_with_planners
 from oeg.storage.io import load_model
 from oeg.storage.io import persist_comparison_bundle
 from oeg.storage.io import persist_run_bundle
+from oeg.storage.export import export_run_dataset
 from oeg.validation.semantic import SemanticValidationError
 from oeg.validation.semantic import validate_asset_bundle
 from oeg.validation.semantic import validate_coa_semantics
@@ -158,6 +160,19 @@ def replay_generation_batch(
         f"Promoted={result.promoted_count} quarantined={result.quarantined_count}"
     )
     typer.echo(f"Output directory: {output_dir / result.batch_id}")
+
+
+@app.command("export-dataset")
+def export_dataset(
+    runs_dir: Path = typer.Option(default_runs_dir(), exists=True, resolve_path=True),
+    output_dir: Path = typer.Option(default_datasets_dir(), resolve_path=True),
+) -> None:
+    manifest = export_run_dataset(runs_dir, output_dir)
+    typer.echo(
+        f"Dataset export complete: runs={manifest['run_count']} "
+        f"events={manifest['event_count']} lessons={manifest['lesson_count']}"
+    )
+    typer.echo(f"Output directory: {output_dir}")
 
 
 @app.command("run-scenario")

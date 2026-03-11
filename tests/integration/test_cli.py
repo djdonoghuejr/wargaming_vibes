@@ -72,8 +72,13 @@ def test_run_runtime_demo_command_writes_bundle(tmp_path) -> None:
     run_dirs = [item for item in tmp_path.iterdir() if item.is_dir()]
     assert len(run_dirs) == 1
     manifest = json.loads((run_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
+    final_state = json.loads((run_dirs[0] / "final_state.json").read_text(encoding="utf-8"))
     assert manifest["blue_coa_id"] == "blue_heuristic"
     assert manifest["red_coa_id"] == "red_heuristic"
+    blue_view = final_state["side_views"]["blue"]
+    assert "suspected_enemy_zones" in blue_view
+    assert "false_contact_zones" in blue_view
+    assert "zone_confidence" in blue_view
 
 
 def test_replay_generation_batch_command_promotes_asset(tmp_path) -> None:
@@ -118,3 +123,26 @@ def test_replay_generation_batch_command_promotes_asset(tmp_path) -> None:
     assert len(batch_dirs) == 1
     manifest = json.loads((batch_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["promoted_count"] == 1
+
+
+def test_export_dataset_command_writes_flat_tables(tmp_path) -> None:
+    runs_dir = tmp_path / "runs"
+    datasets_dir = tmp_path / "datasets"
+
+    run_result = runner.invoke(
+        app,
+        ["run-scenario", "--output-dir", str(runs_dir)],
+    )
+    assert run_result.exit_code == 0, run_result.stdout
+
+    export_result = runner.invoke(
+        app,
+        ["export-dataset", "--runs-dir", str(runs_dir), "--output-dir", str(datasets_dir)],
+    )
+    assert export_result.exit_code == 0, export_result.stdout
+
+    manifest = json.loads((datasets_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["run_count"] == 1
+    assert manifest["event_count"] > 0
+    assert (datasets_dir / "run_manifest_rows.jsonl").exists()
+    assert (datasets_dir / "event_rows.jsonl").exists()
