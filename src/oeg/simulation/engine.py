@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from random import Random
 
 from oeg.analysis.reporting import build_aar
 from oeg.analysis.reporting import extract_lessons
+from oeg.planners.base import Planner
+from oeg.planners.base import PlannerContext
 from oeg.schemas.models import AAR
 from oeg.schemas.models import ActionType
 from oeg.schemas.models import AdjudicationResult
@@ -47,6 +50,12 @@ class SimulationArtifacts:
     lessons: list[LessonLearned]
 
 
+OrderProvider = Callable[
+    [int, str, dict[str, UnitState], dict[str, ControlState], dict[Side, SideObservation]],
+    list[IssuedOrder],
+]
+
+
 def run_scenario(
     scenario: Scenario,
     blue_force: ForcePackage,
@@ -55,8 +64,67 @@ def run_scenario(
     red_coa: COA,
     seed: int,
 ) -> SimulationArtifacts:
+    return _run_simulation(
+        scenario=scenario,
+        blue_force=blue_force,
+        red_force=red_force,
+        blue_actor_id=blue_coa.id,
+        red_actor_id=red_coa.id,
+        seed=seed,
+        order_provider=lambda turn, run_id, unit_states, zone_control, side_views: _build_orders_for_turn(
+            turn=turn,
+            run_id=run_id,
+            scenario=scenario,
+            blue_force=blue_force,
+            red_force=red_force,
+            blue_coa=blue_coa,
+            red_coa=red_coa,
+            unit_states=unit_states,
+            side_views=side_views,
+        ),
+    )
+
+
+def run_scenario_with_planners(
+    scenario: Scenario,
+    blue_force: ForcePackage,
+    red_force: ForcePackage,
+    blue_planner: Planner,
+    red_planner: Planner,
+    seed: int,
+) -> SimulationArtifacts:
+    return _run_simulation(
+        scenario=scenario,
+        blue_force=blue_force,
+        red_force=red_force,
+        blue_actor_id=blue_planner.planner_id,
+        red_actor_id=red_planner.planner_id,
+        seed=seed,
+        order_provider=lambda turn, run_id, unit_states, zone_control, side_views: _build_orders_from_planners(
+            turn=turn,
+            run_id=run_id,
+            scenario=scenario,
+            blue_force=blue_force,
+            red_force=red_force,
+            blue_planner=blue_planner,
+            red_planner=red_planner,
+            unit_states=unit_states,
+            side_views=side_views,
+        ),
+    )
+
+
+def _run_simulation(
+    scenario: Scenario,
+    blue_force: ForcePackage,
+    red_force: ForcePackage,
+    blue_actor_id: str,
+    red_actor_id: str,
+    seed: int,
+    order_provider: OrderProvider,
+) -> SimulationArtifacts:
     rng = Random(seed)
-    run_id = timestamp_id(f"run_{scenario.id}_{blue_coa.id}_{seed}")
+    run_id = timestamp_id(f"run_{scenario.id}_{blue_actor_id}_{seed}")
     created_at = utc_now_iso()
 
     unit_states = _initialize_units(blue_force, red_force)
@@ -73,12 +141,14 @@ def run_scenario(
 
     for turn in range(1, scenario.max_turns + 1):
         _age_observations(observations)
-        orders = _build_orders_for_turn(turn, blue_force, red_force, blue_coa, red_coa)
+        planner_views = _build_side_views(observations)
+        orders = order_provider(turn, run_id, unit_states, zone_control, planner_views)
         orders_by_unit = {order.unit_id: order for order in orders}
 
         turn_events: list[EventLog] = []
         turn_events.extend(_process_recon(turn, run_id, unit_states, observations, orders, rng))
         _apply_passive_detection(scenario, unit_states, observations)
+        _inject_false_contacts(turn, scenario, unit_states, observations, rng)
         turn_events.extend(_process_movement(turn, run_id, scenario, unit_states, orders))
         support_bonus, support_events = _process_support(turn, run_id, unit_states, orders)
         turn_events.extend(support_events)
@@ -119,10 +189,10 @@ def run_scenario(
             turn_number=turn,
             phase=Phase.COMPLETED,
             rng_seed=seed,
-            truth_state=TruthState(zone_control=zone_control, unit_status=unit_states),
-            side_views=side_views,
-            scoreboard=scoreboard,
-            active_orders=orders,
+            truth_state=_snapshot_truth_state(zone_control, unit_states),
+            side_views=_snapshot_side_views(side_views),
+            scoreboard=_snapshot_scoreboard(scoreboard),
+            active_orders=_snapshot_orders(orders),
         )
         turn_states.append(turn_state)
         event_logs.extend(turn_events)
@@ -135,11 +205,11 @@ def run_scenario(
         scenario_id=scenario.id,
         blue_force_package_id=blue_force.id,
         red_force_package_id=red_force.id,
-        blue_coa_id=blue_coa.id,
-        red_coa_id=red_coa.id,
+        blue_coa_id=blue_actor_id,
+        red_coa_id=red_actor_id,
         seed=seed,
         turns_completed=len(turn_states),
-        summary_scores=final_scores,
+        summary_scores=_snapshot_scoreboard(final_scores),
         final_outcome=outcome,
     )
     lessons = extract_lessons(event_logs, run_id)
@@ -216,11 +286,19 @@ def _adjacency_map(scenario: Scenario) -> dict[str, set[str]]:
 
 def _build_orders_for_turn(
     turn: int,
+    run_id: str,
+    scenario: Scenario,
     blue_force: ForcePackage,
     red_force: ForcePackage,
     blue_coa: COA,
     red_coa: COA,
+    unit_states: dict[str, UnitState],
+    side_views: dict[Side, SideObservation],
 ) -> list[IssuedOrder]:
+    del run_id
+    del scenario
+    del unit_states
+    del side_views
     orders: list[IssuedOrder] = []
     for force_package, coa in ((blue_force, blue_coa), (red_force, red_coa)):
         planned = {action.unit_id: action for action in coa.actions if action.turn == turn}
@@ -250,6 +328,87 @@ def _build_orders_for_turn(
     return orders
 
 
+def _build_orders_from_planners(
+    turn: int,
+    run_id: str,
+    scenario: Scenario,
+    blue_force: ForcePackage,
+    red_force: ForcePackage,
+    blue_planner: Planner,
+    red_planner: Planner,
+    unit_states: dict[str, UnitState],
+    side_views: dict[Side, SideObservation],
+) -> list[IssuedOrder]:
+    adjacency_map = _adjacency_map(scenario)
+    orders: list[IssuedOrder] = []
+    planner_specs = (
+        (blue_planner, blue_force, Side.BLUE),
+        (red_planner, red_force, Side.RED),
+    )
+    for planner, force_package, side in planner_specs:
+        own_units = {
+            unit_id: unit
+            for unit_id, unit in unit_states.items()
+            if unit.side == side
+        }
+        context = PlannerContext(
+            run_id=run_id,
+            turn_number=turn,
+            side=side,
+            scenario=scenario,
+            force_package=force_package,
+            own_units=own_units,
+            side_view=side_views[side].model_copy(deep=True),
+            objectives=[
+                objective for objective in scenario.objectives if objective.side == side
+            ],
+            adjacency_map=adjacency_map,
+        )
+        proposed_orders = planner.plan_turn(context)
+        orders.extend(_normalize_orders(force_package, planner.planner_id, proposed_orders))
+    return orders
+
+
+def _normalize_orders(
+    force_package: ForcePackage,
+    source_id: str,
+    proposed_orders: list[IssuedOrder],
+) -> list[IssuedOrder]:
+    valid_unit_ids = {unit.id for unit in force_package.units}
+    orders_by_unit: dict[str, IssuedOrder] = {}
+    for order in proposed_orders:
+        if order.unit_id not in valid_unit_ids:
+            continue
+        if order.side != force_package.side:
+            continue
+        orders_by_unit[order.unit_id] = IssuedOrder(
+            side=force_package.side,
+            unit_id=order.unit_id,
+            action=order.action,
+            target_zone=order.target_zone,
+            support_unit_ids=[
+                unit_id for unit_id in order.support_unit_ids if unit_id in valid_unit_ids
+            ],
+            source_coa_id=order.source_coa_id or source_id,
+            notes=order.notes,
+        )
+
+    normalized: list[IssuedOrder] = []
+    for unit in force_package.units:
+        normalized.append(
+            orders_by_unit.get(
+                unit.id,
+                IssuedOrder(
+                    side=force_package.side,
+                    unit_id=unit.id,
+                    action=ActionType.HOLD,
+                    source_coa_id=source_id,
+                ),
+            )
+        )
+    return normalized
+
+
 def _update_contact(
     observations: dict[Side, dict[str, dict[str, float | int | str]]],
     observer_side: Side,
@@ -264,7 +423,51 @@ def _update_contact(
         "zone": zone,
         "confidence": round(min(0.99, confidence), 4),
         "age": 0,
+        "source": "confirmed",
     }
+
+
+def _inject_false_contacts(
+    turn: int,
+    scenario: Scenario,
+    unit_states: dict[str, UnitState],
+    observations: dict[Side, dict[str, dict[str, float | int | str]]],
+    rng: Random,
+) -> None:
+    adjacency = _adjacency_map(scenario)
+    for side in (Side.BLUE, Side.RED):
+        side_units = [unit for unit in unit_states.values() if unit.side == side and not unit.destroyed]
+        enemy_units = [unit for unit in unit_states.values() if unit.side != side and not unit.destroyed]
+        if not side_units or not enemy_units:
+            continue
+
+        intel_confidence = _mean_contact_confidence(observations[side])
+        if intel_confidence >= 0.45:
+            continue
+
+        candidate_zones: set[str] = set()
+        for unit in side_units:
+            candidate_zones.update(adjacency.get(unit.location, set()))
+            candidate_zones.add(unit.location)
+
+        actual_enemy_zones = {unit.location for unit in enemy_units}
+        decoy_zones = sorted(candidate_zones - actual_enemy_zones)
+        if not decoy_zones:
+            continue
+
+        deception_pressure = max(unit.signature for unit in enemy_units)
+        trigger_probability = min(0.3, 0.08 + deception_pressure * 0.18 + (0.4 - intel_confidence) * 0.3)
+        if rng.random() > trigger_probability:
+            continue
+
+        false_zone = rng.choice(decoy_zones)
+        false_contact_id = f"false::{side.value}::{turn:02d}::{len(observations[side]) + 1:02d}"
+        observations[side][false_contact_id] = {
+            "zone": false_zone,
+            "confidence": round(min(0.55, 0.18 + rng.random() * 0.22), 4),
+            "age": 0,
+            "source": "false_contact",
+        }
 
 
 def _process_recon(
@@ -743,11 +946,39 @@ def _build_side_views(
 ) -> dict[Side, SideObservation]:
     views: dict[Side, SideObservation] = {}
     for side, contacts in observations.items():
+        confirmed_contacts = {
+            unit_id: contact
+            for unit_id, contact in contacts.items()
+            if str(contact.get("source", "confirmed")) == "confirmed"
+        }
+        false_contacts = {
+            unit_id: contact
+            for unit_id, contact in contacts.items()
+            if str(contact.get("source", "")) == "false_contact"
+        }
         known_enemy_positions = {
             unit_id: str(contact["zone"])
-            for unit_id, contact in contacts.items()
-            if float(contact["confidence"]) >= 0.35
+            for unit_id, contact in confirmed_contacts.items()
+            if float(contact["confidence"]) >= 0.55 and int(contact["age"]) <= 2
         }
+        suspected_enemy_zones = sorted(
+            {
+                str(contact["zone"])
+                for contact in confirmed_contacts.values()
+                if float(contact["confidence"]) < 0.55
+            }
+        )
+        stale_enemy_positions = {
+            unit_id: str(contact["zone"])
+            for unit_id, contact in confirmed_contacts.items()
+            if int(contact["age"]) > 2 and float(contact["confidence"]) >= 0.25
+        }
+        false_contact_zones = sorted({str(contact["zone"]) for contact in false_contacts.values()})
+        zone_confidence: dict[str, float] = {}
+        for contact in contacts.values():
+            zone = str(contact["zone"])
+            confidence = float(contact["confidence"])
+            zone_confidence[zone] = max(zone_confidence.get(zone, 0.0), round(confidence, 4))
         views[side] = SideObservation(
             known_enemy_positions=known_enemy_positions,
             contact_confidence={
@@ -755,13 +986,55 @@ def _build_side_views(
                 for unit_id, contact in contacts.items()
             },
             contact_age={unit_id: int(contact["age"]) for unit_id, contact in contacts.items()},
+            suspected_enemy_zones=suspected_enemy_zones,
+            stale_enemy_positions=stale_enemy_positions,
+            false_contact_zones=false_contact_zones,
+            zone_confidence=zone_confidence,
             unknown_contacts=sum(1 for contact in contacts.values() if float(contact["confidence"]) < 0.35),
-            intel_confidence=round(
-                sum(float(contact["confidence"]) for contact in contacts.values()) / max(1, len(contacts)),
-                4,
-            ),
+            intel_confidence=round(_mean_contact_confidence(contacts), 4),
         )
     return views
+
+
+def _mean_contact_confidence(contacts: dict[str, dict[str, float | int | str]]) -> float:
+    if not contacts:
+        return 0.0
+    return sum(float(contact["confidence"]) for contact in contacts.values()) / len(contacts)
+
+
+def _snapshot_truth_state(
+    zone_control: dict[str, ControlState],
+    unit_states: dict[str, UnitState],
+) -> TruthState:
+    return TruthState(
+        zone_control=dict(zone_control),
+        unit_status={
+            unit_id: unit_state.model_copy(deep=True)
+            for unit_id, unit_state in unit_states.items()
+        },
+    )
+
+
+def _snapshot_side_views(
+    side_views: dict[Side, SideObservation],
+) -> dict[Side, SideObservation]:
+    return {
+        side: view.model_copy(deep=True)
+        for side, view in side_views.items()
+    }
+
+
+def _snapshot_scoreboard(
+    scoreboard: dict[Side, SideScore],
+) -> dict[Side, SideScore]:
+    return {
+        side: score.model_copy(deep=True)
+        for side, score in scoreboard.items()
+    }
+
+
+def _snapshot_orders(orders: list[IssuedOrder]) -> list[IssuedOrder]:
+    return [order.model_copy(deep=True) for order in orders]
 
 
 def _compute_scoreboard(

@@ -198,6 +198,10 @@ class SideObservation(StrictModel):
     known_enemy_positions: dict[str, str] = Field(default_factory=dict)
     contact_confidence: dict[str, float] = Field(default_factory=dict)
     contact_age: dict[str, int] = Field(default_factory=dict)
+    suspected_enemy_zones: list[str] = Field(default_factory=list)
+    stale_enemy_positions: dict[str, str] = Field(default_factory=dict)
+    false_contact_zones: list[str] = Field(default_factory=list)
+    zone_confidence: dict[str, float] = Field(default_factory=dict)
     unknown_contacts: int = Field(default=0, ge=0)
     intel_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
 

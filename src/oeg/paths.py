@@ -15,6 +15,14 @@ def default_runs_dir() -> Path:
     return data_dir() / "runs"
 
 
+def default_generated_dir() -> Path:
+    return data_dir() / "generated"
+
+
+def default_datasets_dir() -> Path:
+    return data_dir() / "datasets"
+
+
 def sample_scenario_path() -> Path:
     return data_dir() / "scenarios" / "scn_corridor_001.json"
 
