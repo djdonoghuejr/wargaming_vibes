@@ -6,7 +6,10 @@ from pathlib import Path
 
 import typer
 
+from oeg.analysis.lessons import aggregate_lessons
 from oeg.analysis.reporting import aggregate_comparison
+from oeg.evaluation.quality import evaluate_runs
+from oeg.paths import default_analysis_dir
 from oeg.generators import FileReplayGenerationProvider
 from oeg.generators import GenerationRequest
 from oeg.generators import OfflineGenerationPipeline
@@ -171,6 +174,32 @@ def export_dataset(
     typer.echo(
         f"Dataset export complete: runs={manifest['run_count']} "
         f"events={manifest['event_count']} lessons={manifest['lesson_count']}"
+    )
+    typer.echo(f"Output directory: {output_dir}")
+
+
+@app.command("aggregate-lessons")
+def aggregate_lessons_command(
+    runs_dir: Path = typer.Option(default_runs_dir(), exists=True, resolve_path=True),
+    output_dir: Path = typer.Option(default_analysis_dir(), resolve_path=True),
+) -> None:
+    manifest = aggregate_lessons(runs_dir, output_dir)
+    typer.echo(
+        f"Lesson aggregation complete: runs={manifest['run_count']} "
+        f"lessons={manifest['lesson_count']} clusters={manifest['cluster_count']}"
+    )
+    typer.echo(f"Output directory: {output_dir}")
+
+
+@app.command("evaluate-runs")
+def evaluate_runs_command(
+    runs_dir: Path = typer.Option(default_runs_dir(), exists=True, resolve_path=True),
+    output_dir: Path = typer.Option(default_analysis_dir(), resolve_path=True),
+) -> None:
+    manifest = evaluate_runs(runs_dir, output_dir)
+    typer.echo(
+        f"Run evaluation complete: runs={manifest['run_count']} "
+        f"pass={manifest['pass_count']} warnings={manifest['warning_count']} weak={manifest['fail_count']}"
     )
     typer.echo(f"Output directory: {output_dir}")
 

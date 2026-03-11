@@ -17,6 +17,7 @@ The current repository implements the first deterministic slice:
 - runtime planners with side-specific state inputs
 - an offline generation replay pipeline with promotion and quarantine handling
 - structured JSON and JSONL outputs for runs and comparisons
+- cross-run lesson aggregation and run-quality scoring
 - a CLI for validation, single-run execution, and COA comparison
 
 ## Quickstart
@@ -59,6 +60,24 @@ oeg run-runtime-demo --output-dir data/runs
 oeg replay-generation-batch --request-file path/to/requests.json --replay-file path/to/replay.json --output-dir data/generated
 ```
 
+7. Export flat JSONL datasets from completed runs.
+
+```powershell
+oeg export-dataset --runs-dir data/runs --output-dir data/datasets
+```
+
+8. Aggregate lessons across completed runs.
+
+```powershell
+oeg aggregate-lessons --runs-dir data/runs --output-dir data/analysis
+```
+
+9. Score completed runs for output quality.
+
+```powershell
+oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
+```
+
 ## Repo Layout
 
 - `src/oeg/schemas`: canonical artifact contracts
@@ -67,6 +86,7 @@ oeg replay-generation-batch --request-file path/to/requests.json --replay-file p
 - `src/oeg/validation`: semantic and cross-asset checks
 - `src/oeg/simulation`: deterministic turn engine and adjudication logic
 - `src/oeg/analysis`: AAR, lessons, and COA comparison summarization
+- `src/oeg/evaluation`: run-quality scoring and evaluation utilities
 - `src/oeg/storage`: JSON, JSONL, and output bundle persistence
 - `prompts/offline`: versioned prompt templates for later model-backed generation
 - `data`: sample scenarios, force packages, COAs, and generated runs

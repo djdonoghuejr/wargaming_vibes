@@ -23,6 +23,10 @@ def default_datasets_dir() -> Path:
     return data_dir() / "datasets"
 
 
+def default_analysis_dir() -> Path:
+    return data_dir() / "analysis"
+
+
 def sample_scenario_path() -> Path:
     return data_dir() / "scenarios" / "scn_corridor_001.json"
 

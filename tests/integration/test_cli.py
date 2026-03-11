@@ -146,3 +146,46 @@ def test_export_dataset_command_writes_flat_tables(tmp_path) -> None:
     assert manifest["event_count"] > 0
     assert (datasets_dir / "run_manifest_rows.jsonl").exists()
     assert (datasets_dir / "event_rows.jsonl").exists()
+
+
+def test_aggregate_lessons_command_writes_clusters(tmp_path) -> None:
+    runs_dir = tmp_path / "runs"
+    analysis_dir = tmp_path / "analysis"
+
+    run_result = runner.invoke(
+        app,
+        ["compare-coas", "--seed", "11", "--seed", "22", "--output-dir", str(runs_dir)],
+    )
+    assert run_result.exit_code == 0, run_result.stdout
+
+    aggregate_result = runner.invoke(
+        app,
+        ["aggregate-lessons", "--runs-dir", str(runs_dir), "--output-dir", str(analysis_dir)],
+    )
+    assert aggregate_result.exit_code == 0, aggregate_result.stdout
+
+    manifest = json.loads((analysis_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["run_count"] >= 1
+    assert manifest["cluster_count"] >= 1
+    assert (analysis_dir / "lesson_clusters.jsonl").exists()
+
+
+def test_evaluate_runs_command_writes_quality_rows(tmp_path) -> None:
+    runs_dir = tmp_path / "runs"
+    analysis_dir = tmp_path / "quality"
+
+    run_result = runner.invoke(
+        app,
+        ["run-runtime-demo", "--output-dir", str(runs_dir)],
+    )
+    assert run_result.exit_code == 0, run_result.stdout
+
+    evaluate_result = runner.invoke(
+        app,
+        ["evaluate-runs", "--runs-dir", str(runs_dir), "--output-dir", str(analysis_dir)],
+    )
+    assert evaluate_result.exit_code == 0, evaluate_result.stdout
+
+    manifest = json.loads((analysis_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["run_count"] == 1
+    assert (analysis_dir / "run_quality_rows.jsonl").exists()
