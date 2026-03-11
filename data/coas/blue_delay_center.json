@@ -1,0 +1,73 @@
+{
+  "id": "blue_delay_center",
+  "schema_version": "0.1.0",
+  "side": "blue",
+  "name": "Delay In Depth",
+  "description": "Reinforce CITY early, absorb the red thrust, and counter only after the corridor attack loses momentum.",
+  "strategy_tags": [
+    "defense",
+    "reserve",
+    "delay"
+  ],
+  "actions": [
+    {
+      "turn": 1,
+      "unit_id": "b2",
+      "action": "recon",
+      "target_zone": "HIGHWAY_JUNCTION",
+      "notes": "Confirm the main axis before committing the reserve."
+    },
+    {
+      "turn": 1,
+      "unit_id": "b3",
+      "action": "move",
+      "target_zone": "CITY",
+      "notes": "Thicken the central defense before the first assault."
+    },
+    {
+      "turn": 2,
+      "unit_id": "b3",
+      "action": "support",
+      "support_unit_ids": [
+        "b1"
+      ],
+      "notes": "Back the main defense in CITY."
+    },
+    {
+      "turn": 3,
+      "unit_id": "b2",
+      "action": "recon",
+      "target_zone": "RIDGE",
+      "notes": "Refresh the contact picture on the northern approach."
+    },
+    {
+      "turn": 3,
+      "unit_id": "b3",
+      "action": "resupply",
+      "notes": "Restore supply before any counterstroke."
+    },
+    {
+      "turn": 4,
+      "unit_id": "b1",
+      "action": "attack",
+      "target_zone": "HIGHWAY_JUNCTION",
+      "notes": "Counterpunch after red loses tempo."
+    },
+    {
+      "turn": 4,
+      "unit_id": "b2",
+      "action": "support",
+      "support_unit_ids": [
+        "b1"
+      ],
+      "notes": "Synchronize support for the counterattack."
+    },
+    {
+      "turn": 5,
+      "unit_id": "b2",
+      "action": "recon",
+      "target_zone": "RIDGE",
+      "notes": "Check for renewed pressure on AIRFIELD."
+    }
+  ]
+}

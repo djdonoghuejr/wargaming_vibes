@@ -1,0 +1,6 @@
+turn_duration_hours: 6
+default_max_turns: 6
+default_output_dir: data/runs
+default_seed: 42
+casualty_floor: 0.01
+destroyed_threshold: 0.1

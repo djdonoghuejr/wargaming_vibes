@@ -1,0 +1,11 @@
+offline:
+  description: Token-intensive profile reserved for later offline asset generation.
+  use_cases:
+    - scenario generation
+    - force package generation
+    - lesson mining
+runtime:
+  description: Compact profile reserved for later runtime planners and summarizers.
+  use_cases:
+    - action planning
+    - concise turn summaries
