@@ -287,3 +287,23 @@ def test_evaluate_runs_command_writes_quality_rows(tmp_path) -> None:
     manifest = json.loads((analysis_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["run_count"] == 1
     assert (analysis_dir / "run_quality_rows.jsonl").exists()
+
+
+def test_evaluate_templates_command_writes_template_quality_rows(tmp_path) -> None:
+    from shutil import copytree
+
+    templates_dir = tmp_path / "templates"
+    analysis_dir = tmp_path / "template_analysis"
+    copytree("data/templates", templates_dir)
+
+    result = runner.invoke(
+        app,
+        ["evaluate-templates", "--templates-dir", str(templates_dir), "--output-dir", str(analysis_dir)],
+    )
+    assert result.exit_code == 0, result.stdout
+
+    manifest = json.loads((analysis_dir / "template_manifest.json").read_text(encoding="utf-8"))
+    approval_manifest = json.loads((analysis_dir / "template_approval_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["template_count"] == 6
+    assert "approved_for_batch" in approval_manifest
+    assert (analysis_dir / "template_quality_rows.jsonl").exists()

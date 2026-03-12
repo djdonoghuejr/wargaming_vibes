@@ -99,6 +99,12 @@ oeg aggregate-lessons --runs-dir data/runs --output-dir data/analysis
 oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
 ```
 
+13. Score parameterized templates and assign batch-approval states.
+
+```powershell
+oeg evaluate-templates --templates-dir data/templates --output-dir data/analysis
+```
+
 ## Repo Layout
 
 - `src/oeg/schemas`: canonical artifact contracts

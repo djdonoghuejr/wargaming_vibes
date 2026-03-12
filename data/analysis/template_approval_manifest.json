@@ -1,0 +1,12 @@
+{
+  "approved_for_batch": [
+    "scn_corridor_template_001",
+    "fp_blue_template_001",
+    "fp_red_template_001",
+    "blue_delay_center_template",
+    "blue_mobile_flank_template",
+    "red_direct_thrust_template"
+  ],
+  "promoted": [],
+  "quarantined": []
+}

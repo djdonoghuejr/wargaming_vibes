@@ -21,3 +21,21 @@ The output is written as `lesson_clusters.jsonl` plus a small manifest.
 - a minimally useful end-state contact picture
 
 These scores are not meant to be final truth. They are meant to surface weak or shallow runs before they enter a reusable dataset library.
+
+## Template Quality Scoring
+
+`evaluate-templates` scores parameterized scenario, force, and COA templates before they are used for large batch runs. The current heuristics check for:
+
+- successful schema and semantic validation
+- presence of meaningful variability rather than fixed wrappers
+- action-level differentiation for COA templates
+- enough varied units or positions for force templates
+- enough independent variability axes for scenario templates
+
+Each template receives an `approval_state`:
+
+- `approved_for_batch`
+- `promoted`
+- `quarantined`
+
+This is the first quality gate between “template exists” and “template should consume simulation budget.”

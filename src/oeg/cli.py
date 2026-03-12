@@ -9,7 +9,9 @@ import typer
 from oeg.analysis.lessons import aggregate_lessons
 from oeg.analysis.reporting import aggregate_comparison
 from oeg.evaluation.quality import evaluate_runs
+from oeg.evaluation.quality import evaluate_templates
 from oeg.paths import default_analysis_dir
+from oeg.paths import template_dir
 from oeg.generators import FileReplayGenerationProvider
 from oeg.generators import GenerationRequest
 from oeg.generators import OfflineGenerationPipeline
@@ -362,6 +364,20 @@ def evaluate_runs_command(
     typer.echo(
         f"Run evaluation complete: runs={manifest['run_count']} "
         f"pass={manifest['pass_count']} warnings={manifest['warning_count']} weak={manifest['fail_count']}"
+    )
+    typer.echo(f"Output directory: {output_dir}")
+
+
+@app.command("evaluate-templates")
+def evaluate_templates_command(
+    templates_dir: Path = typer.Option(template_dir(), exists=True, resolve_path=True),
+    output_dir: Path = typer.Option(default_analysis_dir(), resolve_path=True),
+) -> None:
+    manifest = evaluate_templates(templates_dir, output_dir)
+    typer.echo(
+        f"Template evaluation complete: templates={manifest['template_count']} "
+        f"approved={manifest['approved_for_batch_count']} promoted={manifest['promoted_count']} "
+        f"quarantined={manifest['quarantined_count']}"
     )
     typer.echo(f"Output directory: {output_dir}")
 
