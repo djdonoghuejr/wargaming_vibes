@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+import duckdb
 from typer.testing import CliRunner
 
 import oeg.cli as cli_module
@@ -307,3 +308,71 @@ def test_evaluate_templates_command_writes_template_quality_rows(tmp_path) -> No
     assert manifest["template_count"] == 6
     assert "approved_for_batch" in approval_manifest
     assert (analysis_dir / "template_quality_rows.jsonl").exists()
+
+
+def test_build_catalog_command_writes_duckdb_catalog(tmp_path) -> None:
+    from shutil import copytree
+
+    templates_dir = tmp_path / "templates"
+    runs_dir = tmp_path / "runs"
+    datasets_dir = tmp_path / "datasets"
+    analysis_dir = tmp_path / "analysis"
+    catalog_path = tmp_path / "catalog.duckdb"
+    copytree("data/templates", templates_dir)
+
+    run_result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--seed",
+            "11",
+            "--seed",
+            "22",
+            "--output-dir",
+            str(runs_dir),
+            "--scenario-template",
+            str(templates_dir / "scenarios" / "scn_corridor_template_001.json"),
+            "--blue-force-template",
+            str(templates_dir / "force_packages" / "fp_blue_template_001.json"),
+            "--red-force-template",
+            str(templates_dir / "force_packages" / "fp_red_template_001.json"),
+            "--blue-coa-template",
+            str(templates_dir / "coas" / "blue_delay_center_template.json"),
+            "--blue-coa-template",
+            str(templates_dir / "coas" / "blue_mobile_flank_template.json"),
+            "--red-coa-template",
+            str(templates_dir / "coas" / "red_direct_thrust_template.json"),
+        ],
+    )
+    assert run_result.exit_code == 0, run_result.stdout
+
+    catalog_result = runner.invoke(
+        app,
+        [
+            "build-catalog",
+            "--runs-dir",
+            str(runs_dir),
+            "--templates-dir",
+            str(templates_dir),
+            "--datasets-dir",
+            str(datasets_dir),
+            "--analysis-dir",
+            str(analysis_dir),
+            "--output-path",
+            str(catalog_path),
+        ],
+    )
+    assert catalog_result.exit_code == 0, catalog_result.stdout
+    assert catalog_path.exists()
+
+    conn = duckdb.connect(str(catalog_path))
+    try:
+        run_count = conn.execute("SELECT COUNT(*) FROM run_manifests").fetchone()[0]
+        template_count = conn.execute("SELECT COUNT(*) FROM templates").fetchone()[0]
+        comparison_count = conn.execute("SELECT COUNT(*) FROM comparisons").fetchone()[0]
+    finally:
+        conn.close()
+
+    assert run_count == 4
+    assert template_count == 6
+    assert comparison_count == 1

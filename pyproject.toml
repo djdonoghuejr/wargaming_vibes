@@ -9,6 +9,7 @@ description = "Structured operational scenario generation, simulation, and analy
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+  "duckdb>=1.2,<2.0",
   "openai>=1.109,<2.0",
   "pydantic>=2.7,<3.0",
   "typer>=0.12,<1.0",

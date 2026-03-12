@@ -105,6 +105,12 @@ oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
 oeg evaluate-templates --templates-dir data/templates --output-dir data/analysis
 ```
 
+14. Build a DuckDB catalog over templates, runs, comparisons, and quality outputs.
+
+```powershell
+oeg build-catalog --runs-dir data/runs --templates-dir data/templates --datasets-dir data/datasets --analysis-dir data/analysis --output-path data/catalog.duckdb
+```
+
 ## Repo Layout
 
 - `src/oeg/schemas`: canonical artifact contracts

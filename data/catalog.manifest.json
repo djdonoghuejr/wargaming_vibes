@@ -1,0 +1,44 @@
+{
+  "catalog_path": "C:\\Users\\djdon\\edgarbot\\data\\catalog.duckdb",
+  "source_runs_dir": "C:\\Users\\djdon\\edgarbot\\data\\runs",
+  "source_templates_dir": "C:\\Users\\djdon\\edgarbot\\data\\templates",
+  "datasets_dir": "C:\\Users\\djdon\\edgarbot\\data\\datasets",
+  "analysis_dir": "C:\\Users\\djdon\\edgarbot\\data\\analysis",
+  "dataset_manifest": {
+    "run_count": 14,
+    "aar_count": 14,
+    "lesson_count": 28,
+    "event_count": 240,
+    "instantiation_count": 4,
+    "source_runs_dir": "C:\\Users\\djdon\\edgarbot\\data\\runs",
+    "output_dir": "C:\\Users\\djdon\\edgarbot\\data\\datasets"
+  },
+  "run_quality_manifest": {
+    "run_count": 14,
+    "pass_count": 14,
+    "warning_count": 0,
+    "fail_count": 0,
+    "output_dir": "C:\\Users\\djdon\\edgarbot\\data\\analysis",
+    "source_runs_dir": "C:\\Users\\djdon\\edgarbot\\data\\runs"
+  },
+  "template_quality_manifest": {
+    "template_count": 6,
+    "approved_for_batch_count": 6,
+    "promoted_count": 0,
+    "quarantined_count": 0,
+    "source_templates_dir": "C:\\Users\\djdon\\edgarbot\\data\\templates",
+    "output_dir": "C:\\Users\\djdon\\edgarbot\\data\\analysis"
+  },
+  "table_counts": {
+    "templates": 6,
+    "template_quality": 6,
+    "run_manifests": 14,
+    "instantiations": 4,
+    "aars": 14,
+    "lessons": 28,
+    "events": 240,
+    "run_quality": 14,
+    "comparisons": 2,
+    "comparison_metrics": 4
+  }
+}

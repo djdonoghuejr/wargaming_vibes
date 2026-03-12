@@ -47,3 +47,15 @@ The repository now supports a second execution path alongside fixed handcrafted 
 - run outputs preserve template lineage and sampled values in `instantiation.json`
 
 This keeps the deterministic baseline intact while moving the long-term architecture toward controlled stochastic experimentation rather than fully fixed scenario playback.
+
+## Catalog Layer
+
+The repository now supports a DuckDB catalog build step that refreshes:
+
+- flat run datasets
+- run quality rows
+- template quality rows
+- template metadata
+- comparison summaries
+
+The catalog is intended to become the query layer for selecting approved templates, inspecting experiment history, and comparing outcomes across seeds, COAs, and template families.

@@ -11,6 +11,7 @@ from oeg.analysis.reporting import aggregate_comparison
 from oeg.evaluation.quality import evaluate_runs
 from oeg.evaluation.quality import evaluate_templates
 from oeg.paths import default_analysis_dir
+from oeg.paths import default_catalog_path
 from oeg.paths import template_dir
 from oeg.generators import FileReplayGenerationProvider
 from oeg.generators import GenerationRequest
@@ -49,6 +50,7 @@ from oeg.storage.io import load_model
 from oeg.storage.io import persist_comparison_bundle
 from oeg.storage.io import persist_instantiated_assets
 from oeg.storage.io import persist_run_bundle
+from oeg.storage.catalog import build_duckdb_catalog
 from oeg.storage.export import export_run_dataset
 from oeg.validation.semantic import SemanticValidationError
 from oeg.validation.semantic import validate_asset_bundle
@@ -380,6 +382,29 @@ def evaluate_templates_command(
         f"quarantined={manifest['quarantined_count']}"
     )
     typer.echo(f"Output directory: {output_dir}")
+
+
+@app.command("build-catalog")
+def build_catalog_command(
+    runs_dir: Path = typer.Option(default_runs_dir(), exists=True, resolve_path=True),
+    templates_dir: Path = typer.Option(template_dir(), exists=True, resolve_path=True),
+    datasets_dir: Path = typer.Option(default_datasets_dir(), resolve_path=True),
+    analysis_dir: Path = typer.Option(default_analysis_dir(), resolve_path=True),
+    output_path: Path = typer.Option(default_catalog_path(), resolve_path=True),
+) -> None:
+    manifest = build_duckdb_catalog(
+        runs_dir=runs_dir,
+        templates_dir=templates_dir,
+        datasets_dir=datasets_dir,
+        analysis_dir=analysis_dir,
+        output_path=output_path,
+    )
+    table_counts = manifest["table_counts"]
+    typer.echo(
+        f"DuckDB catalog complete: templates={table_counts['templates']} "
+        f"runs={table_counts['run_manifests']} comparisons={table_counts['comparisons']}"
+    )
+    typer.echo(f"Catalog path: {output_path}")
 
 
 @app.command("run-scenario")

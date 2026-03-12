@@ -31,6 +31,10 @@ def default_analysis_dir() -> Path:
     return data_dir() / "analysis"
 
 
+def default_catalog_path() -> Path:
+    return data_dir() / "catalog.duckdb"
+
+
 def sample_scenario_path() -> Path:
     return data_dir() / "scenarios" / "scn_corridor_001.json"
 
