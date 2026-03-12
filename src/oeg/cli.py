@@ -61,6 +61,9 @@ from oeg.validation.semantic import validate_force_package_semantics
 from oeg.validation.semantic import validate_force_template_semantics
 from oeg.validation.semantic import validate_scenario_semantics
 from oeg.validation.semantic import validate_scenario_template_semantics
+from oeg.workflows import instantiate_template_assets
+from oeg.workflows import load_template_bundle as load_workflow_template_bundle
+from oeg.workflows import run_batch_from_templates
 
 
 app = typer.Typer(help="Operational Experiment Generator CLI")
@@ -129,42 +132,19 @@ def _load_template_bundle(
     blue_coa_template_paths: list[Path],
     red_coa_template_path: Path,
 ) -> tuple[ScenarioTemplate, ForceTemplate, ForceTemplate, list[COATemplate], COATemplate]:
-    scenario_template = load_model(scenario_template_path, ScenarioTemplate)
-    blue_force_template = load_model(blue_force_template_path, ForceTemplate)
-    red_force_template = load_model(red_force_template_path, ForceTemplate)
-    blue_coa_templates = [load_model(path, COATemplate) for path in blue_coa_template_paths]
-    red_coa_template = load_model(red_coa_template_path, COATemplate)
-
-    errors: list[str] = []
-    try:
-        validate_scenario_template_semantics(scenario_template)
-    except SemanticValidationError as exc:
-        errors.extend(exc.errors)
-
-    for force_template in (blue_force_template, red_force_template):
-        try:
-            validate_force_template_semantics(scenario_template, force_template)
-        except SemanticValidationError as exc:
-            errors.extend(exc.errors)
-
-    for coa_template, force_template in (
-        *[(item, blue_force_template) for item in blue_coa_templates],
-        (red_coa_template, red_force_template),
-    ):
-        try:
-            validate_coa_template_semantics(scenario_template, force_template, coa_template)
-        except SemanticValidationError as exc:
-            errors.extend(exc.errors)
-
-    if errors:
-        raise SemanticValidationError(errors)
-
+    bundle = load_workflow_template_bundle(
+        scenario_template_path=scenario_template_path,
+        blue_force_template_path=blue_force_template_path,
+        red_force_template_path=red_force_template_path,
+        blue_coa_template_paths=blue_coa_template_paths,
+        red_coa_template_path=red_coa_template_path,
+    )
     return (
-        scenario_template,
-        blue_force_template,
-        red_force_template,
-        blue_coa_templates,
-        red_coa_template,
+        bundle.scenario_template,
+        bundle.blue_force_template,
+        bundle.red_force_template,
+        bundle.blue_coa_templates,
+        bundle.red_coa_template,
     )
 
 
@@ -319,45 +299,26 @@ def instantiate_assets(
     output_dir: Path = typer.Option(default_generated_dir(), resolve_path=True),
 ) -> None:
     try:
-        (
-            scenario_template_obj,
-            blue_force_template_obj,
-            red_force_template_obj,
-            blue_coa_templates,
-            red_coa_template_obj,
-        ) = _load_template_bundle(
+        bundle = load_workflow_template_bundle(
             scenario_template,
             blue_force_template,
             red_force_template,
             [blue_coa_template],
             red_coa_template,
         )
-        profile = get_sampling_profile(sampling_profile)
-        bundle = instantiate_bundle(
-            scenario_template=scenario_template_obj,
-            blue_force_template=blue_force_template_obj,
-            red_force_template=red_force_template_obj,
-            blue_coa_template=blue_coa_templates[0],
-            red_coa_template=red_coa_template_obj,
+        result = instantiate_template_assets(
+            template_bundle=bundle,
             seed=seed,
-            profile=profile,
-        )
-        instantiation_dir = persist_instantiated_assets(
-            output_root=output_dir,
-            instantiation=bundle.instantiation,
-            scenario=bundle.scenario,
-            blue_force=bundle.blue_force,
-            red_force=bundle.red_force,
-            blue_coa=bundle.blue_coa,
-            red_coa=bundle.red_coa,
+            sampling_profile=sampling_profile,
+            output_dir=output_dir,
         )
     except (KeyError, SemanticValidationError, ValueError) as exc:
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
 
-    typer.echo(f"Instantiation complete: {bundle.instantiation.id}")
-    typer.echo(f"Sampling profile: {profile.profile_id}")
-    typer.echo(f"Output directory: {instantiation_dir}")
+    typer.echo(f"Instantiation complete: {result.bundle.instantiation.id}")
+    typer.echo(f"Sampling profile: {result.bundle.instantiation.stochastic_profile_id}")
+    typer.echo(f"Output directory: {result.output_dir}")
 
 
 @app.command("export-dataset")
@@ -637,92 +598,30 @@ def run_batch(
     blue_coa_template_paths = blue_coa_template or _default_blue_coa_templates()
 
     try:
-        (
-            scenario_template_obj,
-            blue_force_template_obj,
-            red_force_template_obj,
-            blue_coa_templates,
-            red_coa_template_obj,
-        ) = _load_template_bundle(
+        template_bundle = load_workflow_template_bundle(
             scenario_template,
             blue_force_template,
             red_force_template,
             blue_coa_template_paths,
             red_coa_template,
         )
-        profile = get_sampling_profile(sampling_profile)
-        if require_approved:
-            _enforce_template_approvals(
-                catalog_path=catalog_path,
-                scenario_template=scenario_template_obj,
-                blue_force_template=blue_force_template_obj,
-                red_force_template=red_force_template_obj,
-                blue_coa_templates=blue_coa_templates,
-                red_coa_template=red_coa_template_obj,
-            )
+        result = run_batch_from_templates(
+            template_bundle=template_bundle,
+            seeds=seed_list,
+            sampling_profile=sampling_profile,
+            output_dir=output_dir,
+            catalog_path=catalog_path,
+            require_approved=require_approved,
+        )
     except (KeyError, SemanticValidationError, ValueError) as exc:
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
 
-    manifests_by_coa: dict[str, list] = {coa_template.base_coa.id: [] for coa_template in blue_coa_templates}
-    run_dirs: list[Path] = []
-    comparison_scenario: Scenario | None = None
-
-    for blue_coa_template_obj in blue_coa_templates:
-        for item in seed_list:
-            bundle = instantiate_bundle(
-                scenario_template=scenario_template_obj,
-                blue_force_template=blue_force_template_obj,
-                red_force_template=red_force_template_obj,
-                blue_coa_template=blue_coa_template_obj,
-                red_coa_template=red_coa_template_obj,
-                seed=item,
-                profile=profile,
-            )
-            if comparison_scenario is None:
-                comparison_scenario = bundle.scenario
-
-            artifacts = run_scenario(
-                scenario=bundle.scenario,
-                blue_force=bundle.blue_force,
-                red_force=bundle.red_force,
-                blue_coa=bundle.blue_coa,
-                red_coa=bundle.red_coa,
-                seed=item,
-            )
-            artifacts.manifest.instantiation_id = bundle.instantiation.id
-            artifacts.manifest.stochastic_profile_id = profile.profile_id
-            artifacts.manifest.source_scenario_template_id = scenario_template_obj.id
-            artifacts.manifest.source_blue_force_template_id = blue_force_template_obj.id
-            artifacts.manifest.source_red_force_template_id = red_force_template_obj.id
-            artifacts.manifest.source_blue_coa_template_id = blue_coa_template_obj.id
-            artifacts.manifest.source_red_coa_template_id = red_coa_template_obj.id
-            run_dir = persist_run_bundle(
-                output_root=output_dir,
-                manifest=artifacts.manifest,
-                turn_states=artifacts.turn_states,
-                event_logs=artifacts.event_logs,
-                aar=artifacts.aar,
-                lessons=artifacts.lessons,
-                instantiation=bundle.instantiation,
-            )
-            run_dirs.append(run_dir)
-            manifests_by_coa[bundle.blue_coa.id].append(artifacts.manifest)
-
-    assert comparison_scenario is not None
-    comparison = aggregate_comparison(
-        scenario=comparison_scenario,
-        manifests_by_coa=manifests_by_coa,
-        red_coa_id=red_coa_template_obj.base_coa.id,
-        seed_list=seed_list,
-    )
-    comparison_dir = persist_comparison_bundle(output_dir, comparison, run_dirs)
-
-    typer.echo(f"Batch execution complete: {comparison.id}")
-    typer.echo(f"Sampling profile: {profile.profile_id}")
-    typer.echo(f"Recommended blue COA: {comparison.recommended_coa}")
+    typer.echo(f"Batch execution complete: {result.comparison.id}")
+    typer.echo(f"Sampling profile: {sampling_profile}")
+    typer.echo(f"Recommended blue COA: {result.comparison.recommended_coa}")
     typer.echo(
-        f"Score delta={comparison.paired_seed_stats['score_delta']:.3f} "
-        f"confidence={comparison.paired_seed_stats['confidence']:.3f}"
+        f"Score delta={result.comparison.paired_seed_stats['score_delta']:.3f} "
+        f"confidence={result.comparison.paired_seed_stats['confidence']:.3f}"
     )
-    typer.echo(f"Output directory: {comparison_dir}")
+    typer.echo(f"Output directory: {result.comparison_dir}")

@@ -113,8 +113,19 @@ oeg evaluate-templates --templates-dir data/templates --output-dir data/analysis
 oeg build-catalog --runs-dir data/runs --templates-dir data/templates --datasets-dir data/datasets --analysis-dir data/analysis --output-path data/catalog.duckdb
 ```
 
+15. Start the analyst API and frontend console.
+
+```powershell
+uvicorn apps.api.main:app --reload
+cd apps/web
+npm install
+npm run dev
+```
+
 ## Repo Layout
 
+- `apps/api`: FastAPI analyst API over the DuckDB catalog and run bundles
+- `apps/web`: React analyst console for templates, runs, comparisons, and controlled actions
 - `src/oeg/schemas`: canonical artifact contracts
 - `src/oeg/planners`: runtime planner interfaces and implementations
 - `src/oeg/sampling`: seed-driven template instantiation and stochastic profiles
