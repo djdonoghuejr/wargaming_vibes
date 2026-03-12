@@ -1,0 +1,89 @@
+{
+  "id": "blue_delay_center",
+  "schema_version": "0.1.0",
+  "created_at": "2026-03-12T02:29:16+00:00",
+  "source_run_id": null,
+  "provenance": {
+    "coa_template_id": "blue_delay_center_template",
+    "sampling_profile_id": "hybrid_stochastic_v1",
+    "component_seed": 17535415177493502790
+  },
+  "side": "blue",
+  "name": "Delay In Depth",
+  "description": "Reinforce CITY early, absorb the red thrust, and counter only after the corridor attack loses momentum.",
+  "strategy_tags": [
+    "defense",
+    "reserve",
+    "delay"
+  ],
+  "actions": [
+    {
+      "turn": 1,
+      "unit_id": "b2",
+      "action": "recon",
+      "target_zone": "HIGHWAY_JUNCTION",
+      "support_unit_ids": [],
+      "notes": "Confirm the main axis before committing the reserve."
+    },
+    {
+      "turn": 1,
+      "unit_id": "b3",
+      "action": "move",
+      "target_zone": "PORT",
+      "support_unit_ids": [],
+      "notes": "Delay reserve commitment for one turn."
+    },
+    {
+      "turn": 2,
+      "unit_id": "b3",
+      "action": "support",
+      "target_zone": null,
+      "support_unit_ids": [
+        "b1"
+      ],
+      "notes": "Back the main defense in CITY."
+    },
+    {
+      "turn": 3,
+      "unit_id": "b2",
+      "action": "recon",
+      "target_zone": "RIDGE",
+      "support_unit_ids": [],
+      "notes": "Refresh the contact picture on the northern approach."
+    },
+    {
+      "turn": 3,
+      "unit_id": "b3",
+      "action": "resupply",
+      "target_zone": null,
+      "support_unit_ids": [],
+      "notes": "Restore supply before any counterstroke."
+    },
+    {
+      "turn": 4,
+      "unit_id": "b1",
+      "action": "hold",
+      "target_zone": null,
+      "support_unit_ids": [],
+      "notes": "Preserve combat power and hold the city."
+    },
+    {
+      "turn": 4,
+      "unit_id": "b2",
+      "action": "support",
+      "target_zone": null,
+      "support_unit_ids": [
+        "b1"
+      ],
+      "notes": "Synchronize support for the counterattack."
+    },
+    {
+      "turn": 5,
+      "unit_id": "b2",
+      "action": "recon",
+      "target_zone": "RIDGE",
+      "support_unit_ids": [],
+      "notes": "Check for renewed pressure on AIRFIELD."
+    }
+  ]
+}

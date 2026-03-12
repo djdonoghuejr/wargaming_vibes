@@ -5,8 +5,11 @@ from collections import deque
 
 from oeg.schemas.models import ActionType
 from oeg.schemas.models import COA
+from oeg.schemas.models import COATemplate
 from oeg.schemas.models import ForcePackage
+from oeg.schemas.models import ForceTemplate
 from oeg.schemas.models import Scenario
+from oeg.schemas.models import ScenarioTemplate
 
 
 ALLOWED_METRICS = {"objective_control", "force_preservation", "sustainment", "tempo"}
@@ -158,6 +161,122 @@ def validate_asset_bundle(
             validate_coa_semantics(scenario, force_package, coa)
         except SemanticValidationError as exc:
             errors.extend(exc.errors)
+
+    if errors:
+        raise SemanticValidationError(errors)
+
+
+def validate_scenario_template_semantics(template: ScenarioTemplate) -> None:
+    errors: list[str] = []
+    try:
+        validate_scenario_semantics(template.base_scenario)
+    except SemanticValidationError as exc:
+        errors.extend(exc.errors)
+
+    zone_ids = {zone.id for zone in template.base_scenario.zones}
+    for zone_id in template.zone_strategic_value_adjustments:
+        if zone_id not in zone_ids:
+            errors.append(
+                f"Scenario template {template.id} references unknown zone {zone_id} in strategic value adjustments."
+            )
+
+    if errors:
+        raise SemanticValidationError(errors)
+
+
+def validate_force_template_semantics(
+    scenario_template: ScenarioTemplate,
+    force_template: ForceTemplate,
+) -> None:
+    errors: list[str] = []
+    scenario = scenario_template.base_scenario
+    force_package = force_template.base_force
+
+    try:
+        validate_force_package_semantics(scenario, force_package)
+    except SemanticValidationError as exc:
+        errors.extend(exc.errors)
+
+    if force_template.side != force_package.side:
+        errors.append(
+            f"Force template {force_template.id} side {force_template.side.value} does not match base force side {force_package.side.value}."
+        )
+
+    zone_ids = {zone.id for zone in scenario.zones}
+    unit_ids = {unit.id for unit in force_package.units}
+    for variation in force_template.unit_variability:
+        if variation.unit_id not in unit_ids:
+            errors.append(
+                f"Force template {force_template.id} references unknown unit {variation.unit_id}."
+            )
+        invalid_locations = [
+            option.value for option in variation.location_options if option.value not in zone_ids
+        ]
+        if invalid_locations:
+            errors.append(
+                f"Force template {force_template.id} unit {variation.unit_id} references unknown location options {invalid_locations}."
+            )
+
+    if errors:
+        raise SemanticValidationError(errors)
+
+
+def validate_coa_template_semantics(
+    scenario_template: ScenarioTemplate,
+    force_template: ForceTemplate,
+    coa_template: COATemplate,
+) -> None:
+    errors: list[str] = []
+    scenario = scenario_template.base_scenario
+    force_package = force_template.base_force
+    coa = coa_template.base_coa
+
+    try:
+        validate_coa_semantics(scenario, force_package, coa)
+    except SemanticValidationError as exc:
+        errors.extend(exc.errors)
+
+    if coa_template.side != force_template.side:
+        errors.append(
+            f"COA template {coa_template.id} side {coa_template.side.value} does not match force template side {force_template.side.value}."
+        )
+
+    zone_ids = {zone.id for zone in scenario.zones}
+    unit_ids = {unit.id for unit in force_package.units}
+    action_keys = {(action.turn, action.unit_id) for action in coa.actions}
+    seen_variations: set[tuple[int, str]] = set()
+    for variation in coa_template.action_variations:
+        key = (variation.turn, variation.unit_id)
+        if key in seen_variations:
+            errors.append(
+                f"COA template {coa_template.id} has duplicate variation entries for turn {variation.turn}, unit {variation.unit_id}."
+            )
+        seen_variations.add(key)
+
+        if variation.turn > scenario.max_turns:
+            errors.append(
+                f"COA template {coa_template.id} variation for unit {variation.unit_id} exceeds scenario max turns."
+            )
+        if variation.unit_id not in unit_ids:
+            errors.append(
+                f"COA template {coa_template.id} references unknown unit {variation.unit_id}."
+            )
+        if key not in action_keys:
+            errors.append(
+                f"COA template {coa_template.id} variation for turn {variation.turn}, unit {variation.unit_id} does not match a base COA action."
+            )
+        for option in variation.options:
+            if option.target_zone and option.target_zone not in zone_ids:
+                errors.append(
+                    f"COA template {coa_template.id} option for unit {variation.unit_id} references unknown zone {option.target_zone}."
+                )
+            invalid_support_targets = [
+                item for item in option.support_unit_ids if item not in unit_ids
+            ]
+            if invalid_support_targets:
+                errors.append(
+                    f"COA template {coa_template.id} option for unit {variation.unit_id} references unknown support units {invalid_support_targets}."
+                )
 
     if errors:
         raise SemanticValidationError(errors)

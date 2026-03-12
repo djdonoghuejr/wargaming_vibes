@@ -1,0 +1,45 @@
+{
+  "id": "red_direct_thrust_template",
+  "schema_version": "0.1.0",
+  "side": "red",
+  "name": "Direct Thrust Template",
+  "description": "Parameterized assault COA with bounded main-effort sequencing.",
+  "strategy_tags": ["penetration", "mass", "tempo"],
+  "base_coa": {
+    "id": "red_direct_thrust",
+    "schema_version": "0.1.0",
+    "side": "red",
+    "name": "Direct Thrust",
+    "description": "Drive through the junction into CITY while a secondary force pressures RIDGE and the airfield axis.",
+    "strategy_tags": ["penetration", "mass", "tempo"],
+    "actions": [
+      {"turn": 1, "unit_id": "r1", "action": "attack", "target_zone": "CITY", "notes": "Immediate pressure on the main objective."},
+      {"turn": 1, "unit_id": "r2", "action": "move", "target_zone": "RIDGE", "notes": "Open the northern approach."},
+      {"turn": 1, "unit_id": "r3", "action": "support", "support_unit_ids": ["r1"], "notes": "Support the first penetration attempt."},
+      {"turn": 2, "unit_id": "r2", "action": "attack", "target_zone": "CITY", "notes": "Press from the northern flank."},
+      {"turn": 2, "unit_id": "r3", "action": "support", "support_unit_ids": ["r2"], "notes": "Shift support to the northern attack."},
+      {"turn": 3, "unit_id": "r1", "action": "attack", "target_zone": "CITY", "notes": "Renew pressure on the central objective."},
+      {"turn": 3, "unit_id": "r2", "action": "attack", "target_zone": "AIRFIELD", "notes": "Exploit RIDGE if available."},
+      {"turn": 4, "unit_id": "r3", "action": "resupply", "notes": "Recover support capacity after early expenditure."},
+      {"turn": 5, "unit_id": "r1", "action": "attack", "target_zone": "CITY", "notes": "Final push for decisive control."}
+    ]
+  },
+  "action_variations": [
+    {
+      "turn": 2,
+      "unit_id": "r2",
+      "options": [
+        {"action": "attack", "target_zone": "CITY", "notes": "Maintain pressure on the city.", "weight": 2.5},
+        {"action": "attack", "target_zone": "RIDGE", "notes": "Secure the ridge before pushing deeper.", "weight": 1.0}
+      ]
+    },
+    {
+      "turn": 5,
+      "unit_id": "r1",
+      "options": [
+        {"action": "attack", "target_zone": "CITY", "notes": "Final push on the city.", "weight": 2.0},
+        {"action": "attack", "target_zone": "AIRFIELD", "notes": "Shift final effort to the airfield.", "weight": 1.0}
+      ]
+    }
+  ]
+}

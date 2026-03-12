@@ -184,6 +184,95 @@ class COA(Artifact):
     actions: list[PlannedAction] = Field(default_factory=list)
 
 
+class NumericRange(StrictModel):
+    min_value: float
+    max_value: float
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> "NumericRange":
+        if self.min_value > self.max_value:
+            raise ValueError("min_value must be less than or equal to max_value")
+        return self
+
+
+class WeightedOption(StrictModel):
+    value: str
+    weight: float = Field(gt=0.0)
+
+
+class UnitTemplateVariation(StrictModel):
+    unit_id: str
+    readiness: NumericRange | None = None
+    morale: NumericRange | None = None
+    supply: NumericRange | None = None
+    signature: NumericRange | None = None
+    strength: NumericRange | None = None
+    fatigue: NumericRange | None = None
+    location_options: list[WeightedOption] = Field(default_factory=list)
+
+
+class ScenarioTemplate(Artifact):
+    name: str
+    description: str
+    base_scenario: Scenario
+    weather_options: list[WeightedOption] = Field(default_factory=list)
+    visibility_options: list[WeightedOption] = Field(default_factory=list)
+    zone_strategic_value_adjustments: dict[str, NumericRange] = Field(default_factory=dict)
+
+
+class ForceTemplate(Artifact):
+    side: Side
+    name: str
+    doctrine: str
+    base_force: ForcePackage
+    unit_variability: list[UnitTemplateVariation] = Field(default_factory=list)
+
+
+class ActionVariantOption(StrictModel):
+    action: ActionType
+    target_zone: str | None = None
+    support_unit_ids: list[str] = Field(default_factory=list)
+    notes: str | None = None
+    weight: float = Field(gt=0.0)
+
+    @model_validator(mode="after")
+    def validate_shape(self) -> "ActionVariantOption":
+        if self.action in {ActionType.MOVE, ActionType.RECON, ActionType.ATTACK} and not self.target_zone:
+            raise ValueError(f"{self.action.value} requires target_zone")
+        return self
+
+
+class ActionVariation(StrictModel):
+    turn: int = Field(ge=1)
+    unit_id: str
+    options: list[ActionVariantOption] = Field(min_length=1)
+
+
+class COATemplate(Artifact):
+    side: Side
+    name: str
+    description: str
+    strategy_tags: list[str] = Field(default_factory=list)
+    base_coa: COA
+    action_variations: list[ActionVariation] = Field(default_factory=list)
+
+
+class RunInstantiation(Artifact):
+    seed: int = Field(ge=0)
+    stochastic_profile_id: str
+    scenario_template_id: str
+    blue_force_template_id: str
+    red_force_template_id: str
+    blue_coa_template_id: str
+    red_coa_template_id: str
+    scenario_id: str
+    blue_force_package_id: str
+    red_force_package_id: str
+    blue_coa_id: str
+    red_coa_id: str
+    sampled_values: dict[str, Any] = Field(default_factory=dict)
+
+
 class IssuedOrder(StrictModel):
     side: Side
     unit_id: str
@@ -327,6 +416,13 @@ class RunManifest(Artifact):
     blue_coa_id: str
     red_coa_id: str
     seed: int
+    instantiation_id: str | None = None
+    stochastic_profile_id: str | None = None
+    source_scenario_template_id: str | None = None
+    source_blue_force_template_id: str | None = None
+    source_red_force_template_id: str | None = None
+    source_blue_coa_template_id: str | None = None
+    source_red_coa_template_id: str | None = None
     turns_completed: int = Field(ge=1)
     output_dir: str | None = None
     summary_scores: dict[Side, SideScore]

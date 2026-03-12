@@ -1,0 +1,43 @@
+{
+  "id": "blue_mobile_flank_template",
+  "schema_version": "0.1.0",
+  "side": "blue",
+  "name": "Mobile Flank Interdiction Template",
+  "description": "Parameterized flank-interdiction COA with bounded tempo and exploitation options.",
+  "strategy_tags": ["flank", "tempo", "interdiction"],
+  "base_coa": {
+    "id": "blue_mobile_flank",
+    "schema_version": "0.1.0",
+    "side": "blue",
+    "name": "Mobile Flank Interdiction",
+    "description": "Contest the junction early, split red momentum, and pressure the approach lanes before the assault can mass.",
+    "strategy_tags": ["flank", "tempo", "interdiction"],
+    "actions": [
+      {"turn": 1, "unit_id": "b2", "action": "recon", "target_zone": "HIGHWAY_JUNCTION", "notes": "Confirm the direct thrust while the reserve moves."},
+      {"turn": 1, "unit_id": "b3", "action": "move", "target_zone": "HIGHWAY_JUNCTION", "notes": "Disrupt the staging area instead of reinforcing the center."},
+      {"turn": 2, "unit_id": "b2", "action": "support", "support_unit_ids": ["b3"], "notes": "Support the reserve as it contests the junction."},
+      {"turn": 2, "unit_id": "b3", "action": "attack", "target_zone": "HIGHWAY_JUNCTION", "notes": "Break the direct assault axis before it can build momentum."},
+      {"turn": 3, "unit_id": "b2", "action": "recon", "target_zone": "FORWARD_BASE", "notes": "Assess the remaining red support structure."},
+      {"turn": 4, "unit_id": "b1", "action": "attack", "target_zone": "RIDGE", "notes": "Exploit local disruption on the northern flank."},
+      {"turn": 4, "unit_id": "b2", "action": "support", "support_unit_ids": ["b1"], "notes": "Enable the main-effort attack on RIDGE."}
+    ]
+  },
+  "action_variations": [
+    {
+      "turn": 2,
+      "unit_id": "b3",
+      "options": [
+        {"action": "attack", "target_zone": "HIGHWAY_JUNCTION", "notes": "Press the junction immediately.", "weight": 2.0},
+        {"action": "move", "target_zone": "CITY", "notes": "Abort the flank and fold back into the center.", "weight": 1.0}
+      ]
+    },
+    {
+      "turn": 4,
+      "unit_id": "b1",
+      "options": [
+        {"action": "attack", "target_zone": "RIDGE", "notes": "Exploit the northern flank.", "weight": 2.0},
+        {"action": "attack", "target_zone": "HIGHWAY_JUNCTION", "notes": "Shift exploitation back to the corridor.", "weight": 1.2}
+      ]
+    }
+  ]
+}

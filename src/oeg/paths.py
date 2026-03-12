@@ -11,6 +11,10 @@ def data_dir() -> Path:
     return project_root() / "data"
 
 
+def template_dir() -> Path:
+    return data_dir() / "templates"
+
+
 def default_runs_dir() -> Path:
     return data_dir() / "runs"
 
@@ -49,3 +53,27 @@ def sample_blue_coa_b_path() -> Path:
 
 def sample_red_coa_path() -> Path:
     return data_dir() / "coas" / "red_direct_thrust.json"
+
+
+def sample_scenario_template_path() -> Path:
+    return template_dir() / "scenarios" / "scn_corridor_template_001.json"
+
+
+def sample_blue_force_template_path() -> Path:
+    return template_dir() / "force_packages" / "fp_blue_template_001.json"
+
+
+def sample_red_force_template_path() -> Path:
+    return template_dir() / "force_packages" / "fp_red_template_001.json"
+
+
+def sample_blue_coa_template_a_path() -> Path:
+    return template_dir() / "coas" / "blue_delay_center_template.json"
+
+
+def sample_blue_coa_template_b_path() -> Path:
+    return template_dir() / "coas" / "blue_mobile_flank_template.json"
+
+
+def sample_red_coa_template_path() -> Path:
+    return template_dir() / "coas" / "red_direct_thrust_template.json"

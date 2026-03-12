@@ -1,0 +1,82 @@
+{
+  "id": "fp_blue_001",
+  "schema_version": "0.1.0",
+  "created_at": "2026-03-12T02:29:16+00:00",
+  "source_run_id": null,
+  "provenance": {
+    "force_template_id": "fp_blue_template_001",
+    "sampling_profile_id": "hybrid_stochastic_v1",
+    "component_seed": 5553525358085304574
+  },
+  "side": "blue",
+  "name": "Task Force Atlas",
+  "doctrine": "delay_defense",
+  "units": [
+    {
+      "id": "b1",
+      "label": "1st Mechanized Battalion",
+      "echelon": "battalion",
+      "location": "CITY",
+      "readiness": 0.8549,
+      "morale": 0.82,
+      "supply": 0.7905,
+      "signature": 0.64,
+      "strength": 0.95,
+      "fatigue": 0.12,
+      "capabilities": {
+        "maneuver": 7,
+        "fires": 6,
+        "isr": 4,
+        "air_defense": 3,
+        "sustainment": 4
+      }
+    },
+    {
+      "id": "b2",
+      "label": "Recon Squadron",
+      "echelon": "battalion",
+      "location": "RIDGE",
+      "readiness": 0.8126,
+      "morale": 0.78,
+      "supply": 0.7405,
+      "signature": 0.38,
+      "strength": 0.88,
+      "fatigue": 0.1,
+      "capabilities": {
+        "maneuver": 5,
+        "fires": 2,
+        "isr": 8,
+        "air_defense": 1,
+        "sustainment": 3
+      }
+    },
+    {
+      "id": "b3",
+      "label": "Reserve Motorized Battalion",
+      "echelon": "battalion",
+      "location": "PORT",
+      "readiness": 0.7517,
+      "morale": 0.76,
+      "supply": 0.7546,
+      "signature": 0.56,
+      "strength": 0.9,
+      "fatigue": 0.11,
+      "capabilities": {
+        "maneuver": 6,
+        "fires": 4,
+        "isr": 3,
+        "air_defense": 2,
+        "sustainment": 5
+      }
+    }
+  ],
+  "support_assets": {
+    "uav_detachments": 2,
+    "medical_support": 1
+  },
+  "capability_summary": {
+    "combat_power": 22.0,
+    "mobility": 16.0,
+    "sustainment_days": 3.0
+  }
+}

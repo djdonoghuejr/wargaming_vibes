@@ -1,0 +1,97 @@
+{
+  "id": "red_direct_thrust",
+  "schema_version": "0.1.0",
+  "created_at": "2026-03-12T02:29:16+00:00",
+  "source_run_id": null,
+  "provenance": {
+    "coa_template_id": "red_direct_thrust_template",
+    "sampling_profile_id": "hybrid_stochastic_v1",
+    "component_seed": 509396281190712963
+  },
+  "side": "red",
+  "name": "Direct Thrust",
+  "description": "Drive through the junction into CITY while a secondary force pressures RIDGE and the airfield axis.",
+  "strategy_tags": [
+    "penetration",
+    "mass",
+    "tempo"
+  ],
+  "actions": [
+    {
+      "turn": 1,
+      "unit_id": "r1",
+      "action": "attack",
+      "target_zone": "CITY",
+      "support_unit_ids": [],
+      "notes": "Immediate pressure on the main objective."
+    },
+    {
+      "turn": 1,
+      "unit_id": "r2",
+      "action": "move",
+      "target_zone": "RIDGE",
+      "support_unit_ids": [],
+      "notes": "Open the northern approach."
+    },
+    {
+      "turn": 1,
+      "unit_id": "r3",
+      "action": "support",
+      "target_zone": null,
+      "support_unit_ids": [
+        "r1"
+      ],
+      "notes": "Support the first penetration attempt."
+    },
+    {
+      "turn": 2,
+      "unit_id": "r2",
+      "action": "attack",
+      "target_zone": "RIDGE",
+      "support_unit_ids": [],
+      "notes": "Secure the ridge before pushing deeper."
+    },
+    {
+      "turn": 2,
+      "unit_id": "r3",
+      "action": "support",
+      "target_zone": null,
+      "support_unit_ids": [
+        "r2"
+      ],
+      "notes": "Shift support to the northern attack."
+    },
+    {
+      "turn": 3,
+      "unit_id": "r1",
+      "action": "attack",
+      "target_zone": "CITY",
+      "support_unit_ids": [],
+      "notes": "Renew pressure on the central objective."
+    },
+    {
+      "turn": 3,
+      "unit_id": "r2",
+      "action": "attack",
+      "target_zone": "AIRFIELD",
+      "support_unit_ids": [],
+      "notes": "Exploit RIDGE if available."
+    },
+    {
+      "turn": 4,
+      "unit_id": "r3",
+      "action": "resupply",
+      "target_zone": null,
+      "support_unit_ids": [],
+      "notes": "Recover support capacity after early expenditure."
+    },
+    {
+      "turn": 5,
+      "unit_id": "r1",
+      "action": "attack",
+      "target_zone": "CITY",
+      "support_unit_ids": [],
+      "notes": "Final push on the city."
+    }
+  ]
+}

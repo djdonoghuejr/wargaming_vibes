@@ -1,0 +1,78 @@
+{
+  "id": "fp_red_template_001",
+  "schema_version": "0.1.0",
+  "side": "red",
+  "name": "Shock Group Viper Template",
+  "doctrine": "direct_penetration",
+  "base_force": {
+    "id": "fp_red_001",
+    "schema_version": "0.1.0",
+    "side": "red",
+    "name": "Shock Group Viper",
+    "doctrine": "direct_penetration",
+    "units": [
+      {
+        "id": "r1",
+        "label": "Assault Battalion",
+        "echelon": "battalion",
+        "location": "HIGHWAY_JUNCTION",
+        "readiness": 0.84,
+        "morale": 0.81,
+        "supply": 0.78,
+        "signature": 0.62,
+        "strength": 0.95,
+        "fatigue": 0.12,
+        "capabilities": {"maneuver": 8, "fires": 6, "isr": 3, "air_defense": 2, "sustainment": 4}
+      },
+      {
+        "id": "r2",
+        "label": "Motorized Battalion",
+        "echelon": "battalion",
+        "location": "FORWARD_BASE",
+        "readiness": 0.82,
+        "morale": 0.77,
+        "supply": 0.75,
+        "signature": 0.57,
+        "strength": 0.92,
+        "fatigue": 0.1,
+        "capabilities": {"maneuver": 7, "fires": 4, "isr": 4, "air_defense": 2, "sustainment": 4}
+      },
+      {
+        "id": "r3",
+        "label": "Fires and EW Group",
+        "echelon": "battalion",
+        "location": "FORWARD_BASE",
+        "readiness": 0.79,
+        "morale": 0.73,
+        "supply": 0.8,
+        "signature": 0.48,
+        "strength": 0.85,
+        "fatigue": 0.08,
+        "capabilities": {"maneuver": 2, "fires": 8, "isr": 5, "air_defense": 1, "sustainment": 4}
+      }
+    ],
+    "support_assets": {"uav_detachments": 1, "ew_teams": 1},
+    "capability_summary": {"combat_power": 24, "mobility": 15, "sustainment_days": 3}
+  },
+  "unit_variability": [
+    {
+      "unit_id": "r1",
+      "readiness": {"min_value": 0.8, "max_value": 0.9},
+      "supply": {"min_value": 0.72, "max_value": 0.82}
+    },
+    {
+      "unit_id": "r2",
+      "readiness": {"min_value": 0.78, "max_value": 0.86},
+      "supply": {"min_value": 0.7, "max_value": 0.8},
+      "location_options": [
+        {"value": "FORWARD_BASE", "weight": 3.0},
+        {"value": "HIGHWAY_JUNCTION", "weight": 1.0}
+      ]
+    },
+    {
+      "unit_id": "r3",
+      "supply": {"min_value": 0.74, "max_value": 0.85},
+      "fatigue": {"min_value": 0.06, "max_value": 0.12}
+    }
+  ]
+}

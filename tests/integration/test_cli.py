@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from typer.testing import CliRunner
 
@@ -171,6 +170,57 @@ def test_generate_live_batch_command_promotes_asset_with_fake_provider(tmp_path,
     assert len(batch_dirs) == 1
     manifest = json.loads((batch_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["promoted_count"] == 1
+
+
+def test_instantiate_assets_command_writes_concrete_bundle(tmp_path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "instantiate-assets",
+            "--output-dir",
+            str(tmp_path),
+            "--seed",
+            "19",
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+
+    instantiation_dirs = [item for item in tmp_path.iterdir() if item.is_dir()]
+    assert len(instantiation_dirs) == 1
+    instantiation = json.loads((instantiation_dirs[0] / "instantiation.json").read_text(encoding="utf-8"))
+    scenario = json.loads((instantiation_dirs[0] / "scenario.json").read_text(encoding="utf-8"))
+    assert instantiation["stochastic_profile_id"] == "hybrid_stochastic_v1"
+    assert scenario["id"] == "scn_corridor_001"
+    assert (instantiation_dirs[0] / "blue_force.json").exists()
+    assert (instantiation_dirs[0] / "blue_coa.json").exists()
+
+
+def test_run_batch_command_writes_runs_and_comparison(tmp_path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--seed",
+            "11",
+            "--seed",
+            "22",
+            "--output-dir",
+            str(tmp_path),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+
+    run_dirs = [item for item in tmp_path.iterdir() if item.is_dir() and item.name.startswith("run_")]
+    comparison_dirs = [item for item in tmp_path.iterdir() if item.is_dir() and item.name.startswith("comparison_")]
+    assert len(run_dirs) == 4
+    assert len(comparison_dirs) == 1
+
+    manifest = json.loads((run_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
+    instantiation = json.loads((run_dirs[0] / "instantiation.json").read_text(encoding="utf-8"))
+    comparison = json.loads((comparison_dirs[0] / "comparison.json").read_text(encoding="utf-8"))
+    assert manifest["instantiation_id"] == instantiation["id"]
+    assert manifest["source_blue_coa_template_id"] is not None
+    assert comparison["sample_count"] == 2
 
 
 def test_export_dataset_command_writes_flat_tables(tmp_path) -> None:

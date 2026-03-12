@@ -1,8 +1,9 @@
 {
-  "run_count": 9,
-  "aar_count": 9,
-  "lesson_count": 18,
-  "event_count": 151,
+  "run_count": 14,
+  "aar_count": 14,
+  "lesson_count": 28,
+  "event_count": 240,
+  "instantiation_count": 4,
   "source_runs_dir": "C:\\Users\\djdon\\edgarbot\\data\\runs",
   "output_dir": "C:\\Users\\djdon\\edgarbot\\data\\datasets"
 }

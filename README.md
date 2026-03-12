@@ -13,6 +13,8 @@ The current repository implements the first deterministic slice:
 
 - versioned Pydantic schemas for core artifacts
 - semantic validation for scenarios, force packages, and COAs
+- parameterized templates for scenarios, force packages, and COAs
+- a seed-replayable sampler that instantiates concrete assets from templates
 - a turn-based simulation engine with deterministic seeded adjudication
 - runtime planners with side-specific state inputs
 - an offline generation pipeline with replay and live model-backed providers
@@ -67,19 +69,31 @@ $env:OPENAI_API_KEY = "sk-..."
 oeg generate-live-batch --request-file path/to/requests.json --model gpt-5-mini --output-dir data/generated
 ```
 
-8. Export flat JSONL datasets from completed runs.
+8. Instantiate a concrete scenario bundle from parameterized templates.
+
+```powershell
+oeg instantiate-assets --seed 19 --output-dir data/generated
+```
+
+9. Run a paired-seed batch from parameterized templates.
+
+```powershell
+oeg run-batch --seed 11 --seed 22 --output-dir data/runs
+```
+
+10. Export flat JSONL datasets from completed runs.
 
 ```powershell
 oeg export-dataset --runs-dir data/runs --output-dir data/datasets
 ```
 
-9. Aggregate lessons across completed runs.
+11. Aggregate lessons across completed runs.
 
 ```powershell
 oeg aggregate-lessons --runs-dir data/runs --output-dir data/analysis
 ```
 
-10. Score completed runs for output quality.
+12. Score completed runs for output quality.
 
 ```powershell
 oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
@@ -89,6 +103,7 @@ oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
 
 - `src/oeg/schemas`: canonical artifact contracts
 - `src/oeg/planners`: runtime planner interfaces and implementations
+- `src/oeg/sampling`: seed-driven template instantiation and stochastic profiles
 - `src/oeg/generators`: offline generation batch scaffolding
 - `src/oeg/validation`: semantic and cross-asset checks
 - `src/oeg/simulation`: deterministic turn engine and adjudication logic
@@ -99,9 +114,9 @@ oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
 - `data`: sample scenarios, force packages, COAs, and generated runs
 - `docs`: architecture and simulation notes
 
-## Immediate Next Steps
+## Current Direction
 
-- deepen fog-of-war mechanics and planner-side belief state
-- add dataset export and DuckDB cataloging
-- add prompt contracts and evaluation harnesses
-- add a lightweight run viewer over exported datasets
+- use parameterized assets to create controlled stochastic runs
+- preserve seed-replayable provenance via instantiation metadata
+- scale batch execution and dataset generation during the unlimited-token window
+- add DuckDB cataloging and a lightweight run viewer over exported datasets

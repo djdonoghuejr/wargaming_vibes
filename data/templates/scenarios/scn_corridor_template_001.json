@@ -1,0 +1,86 @@
+{
+  "id": "scn_corridor_template_001",
+  "schema_version": "0.1.0",
+  "name": "Northern Corridor Delay Template",
+  "description": "Parameterized corridor-delay scenario with bounded weather, visibility, and strategic value variation.",
+  "base_scenario": {
+    "id": "scn_corridor_001",
+    "schema_version": "0.1.0",
+    "name": "Northern Corridor Delay Operation",
+    "description": "A blue force must delay a red thrust toward a regional city and airfield along a constrained corridor.",
+    "classification": "exercise-use-only",
+    "turn_duration_hours": 6,
+    "max_turns": 6,
+    "zones": [
+      {"id": "PORT", "name": "Port District", "terrain": "industrial", "strategic_value": 6},
+      {"id": "CITY", "name": "Central City", "terrain": "urban", "strategic_value": 10},
+      {"id": "RIDGE", "name": "Northern Ridge", "terrain": "elevated_open", "strategic_value": 8},
+      {"id": "AIRFIELD", "name": "Regional Airfield", "terrain": "airfield", "strategic_value": 9},
+      {"id": "HIGHWAY_JUNCTION", "name": "Highway Junction", "terrain": "open", "strategic_value": 8},
+      {"id": "FORWARD_BASE", "name": "Forward Assembly Area", "terrain": "open", "strategic_value": 5}
+    ],
+    "edges": [
+      {"a": "PORT", "b": "CITY", "distance": 1},
+      {"a": "PORT", "b": "HIGHWAY_JUNCTION", "distance": 1},
+      {"a": "CITY", "b": "RIDGE", "distance": 1},
+      {"a": "CITY", "b": "AIRFIELD", "distance": 1},
+      {"a": "CITY", "b": "HIGHWAY_JUNCTION", "distance": 1},
+      {"a": "RIDGE", "b": "AIRFIELD", "distance": 1},
+      {"a": "RIDGE", "b": "FORWARD_BASE", "distance": 1},
+      {"a": "HIGHWAY_JUNCTION", "b": "FORWARD_BASE", "distance": 1}
+    ],
+    "initial_zone_control": {
+      "PORT": "blue",
+      "CITY": "blue",
+      "RIDGE": "blue",
+      "AIRFIELD": "blue",
+      "HIGHWAY_JUNCTION": "red",
+      "FORWARD_BASE": "red"
+    },
+    "objectives": [
+      {"id": "obj_blue_city", "side": "blue", "objective_type": "hold_zone", "target_zone": "CITY", "description": "Hold the city through the end of the scenario.", "weight": 1.5},
+      {"id": "obj_blue_airfield", "side": "blue", "objective_type": "hold_zone", "target_zone": "AIRFIELD", "description": "Keep the airfield under blue control.", "weight": 1.0},
+      {"id": "obj_red_city", "side": "red", "objective_type": "seize_zone", "target_zone": "CITY", "description": "Seize the city to open the corridor.", "weight": 1.5},
+      {"id": "obj_red_airfield", "side": "red", "objective_type": "seize_zone", "target_zone": "AIRFIELD", "description": "Capture the airfield to deny reinforcement.", "weight": 1.0}
+    ],
+    "environment": {
+      "weather": "overcast",
+      "visibility": "standard",
+      "notes": [
+        "Urban terrain around CITY favors defenders.",
+        "RIDGE offers observation over approaches to AIRFIELD."
+      ]
+    },
+    "constraints": {
+      "blue": [
+        "Minimize infrastructure damage in CITY.",
+        "Hold enough reserve to prevent a late airfield breakthrough."
+      ],
+      "red": [
+        "Maintain momentum through the corridor before blue reinforcement can regroup.",
+        "Support assets remain concentrated near FORWARD_BASE."
+      ]
+    },
+    "victory_metrics": ["objective_control", "force_preservation", "sustainment", "tempo"],
+    "scoring_weights": {
+      "objective_control": 0.4,
+      "force_preservation": 0.25,
+      "sustainment": 0.2,
+      "tempo": 0.15
+    }
+  },
+  "weather_options": [
+    {"value": "overcast", "weight": 3.0},
+    {"value": "rain", "weight": 1.5},
+    {"value": "clear", "weight": 1.0}
+  ],
+  "visibility_options": [
+    {"value": "standard", "weight": 3.0},
+    {"value": "reduced", "weight": 1.0}
+  ],
+  "zone_strategic_value_adjustments": {
+    "CITY": {"min_value": 9.0, "max_value": 10.0},
+    "RIDGE": {"min_value": 7.0, "max_value": 9.0},
+    "AIRFIELD": {"min_value": 8.0, "max_value": 10.0}
+  }
+}

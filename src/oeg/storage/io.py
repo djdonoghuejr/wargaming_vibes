@@ -14,6 +14,10 @@ from oeg.schemas.models import COAComparison
 from oeg.schemas.models import EventLog
 from oeg.schemas.models import LessonLearned
 from oeg.schemas.models import RunManifest
+from oeg.schemas.models import RunInstantiation
+from oeg.schemas.models import Scenario
+from oeg.schemas.models import ForcePackage
+from oeg.schemas.models import COA
 from oeg.schemas.models import TurnState
 
 
@@ -70,6 +74,7 @@ def persist_run_bundle(
     event_logs: list[EventLog],
     aar: AAR,
     lessons: list[LessonLearned],
+    instantiation: RunInstantiation | None = None,
 ) -> Path:
     root = ensure_directory(Path(output_root))
     run_dir = ensure_directory(root / manifest.id)
@@ -80,6 +85,8 @@ def persist_run_bundle(
     write_jsonl(run_dir / "event_log.jsonl", event_logs)
     write_json(run_dir / "aar.json", aar)
     write_json(run_dir / "lessons.json", [item.model_dump(mode="json") for item in lessons])
+    if instantiation is not None:
+        write_json(run_dir / "instantiation.json", instantiation)
 
     if turn_states:
         write_json(run_dir / "final_state.json", turn_states[-1])
@@ -104,3 +111,23 @@ def persist_comparison_bundle(
         },
     )
     return comparison_dir
+
+
+def persist_instantiated_assets(
+    output_root: str | Path,
+    instantiation: RunInstantiation,
+    scenario: Scenario,
+    blue_force: ForcePackage,
+    red_force: ForcePackage,
+    blue_coa: COA,
+    red_coa: COA,
+) -> Path:
+    root = ensure_directory(Path(output_root))
+    instantiation_dir = ensure_directory(root / instantiation.id)
+    write_json(instantiation_dir / "instantiation.json", instantiation)
+    write_json(instantiation_dir / "scenario.json", scenario)
+    write_json(instantiation_dir / "blue_force.json", blue_force)
+    write_json(instantiation_dir / "red_force.json", red_force)
+    write_json(instantiation_dir / "blue_coa.json", blue_coa)
+    write_json(instantiation_dir / "red_coa.json", red_coa)
+    return instantiation_dir

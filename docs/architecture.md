@@ -37,3 +37,13 @@ The MVP is designed to prove the architecture with hand-authored assets and dete
 - run deterministic simulation
 - keep prompts short and state-focused
 - emit compact JSON outputs and concise summaries
+## Stochastic Execution Path
+
+The repository now supports a second execution path alongside fixed handcrafted assets:
+
+- template assets define bounded variability
+- a seed-driven sampler materializes concrete runtime assets
+- the existing simulation engine executes the realized scenario
+- run outputs preserve template lineage and sampled values in `instantiation.json`
+
+This keeps the deterministic baseline intact while moving the long-term architecture toward controlled stochastic experimentation rather than fully fixed scenario playback.

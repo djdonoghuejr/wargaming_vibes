@@ -1,0 +1,104 @@
+{
+  "id": "instantiation_blue_delay_center_19_20260312_022916",
+  "schema_version": "0.1.0",
+  "created_at": "2026-03-12T02:29:16+00:00",
+  "source_run_id": null,
+  "provenance": {},
+  "seed": 19,
+  "stochastic_profile_id": "hybrid_stochastic_v1",
+  "scenario_template_id": "scn_corridor_template_001",
+  "blue_force_template_id": "fp_blue_template_001",
+  "red_force_template_id": "fp_red_template_001",
+  "blue_coa_template_id": "blue_delay_center_template",
+  "red_coa_template_id": "red_direct_thrust_template",
+  "scenario_id": "scn_corridor_001",
+  "blue_force_package_id": "fp_blue_001",
+  "red_force_package_id": "fp_red_001",
+  "blue_coa_id": "blue_delay_center",
+  "red_coa_id": "red_direct_thrust",
+  "sampled_values": {
+    "component_seeds": {
+      "scenario": 4221980716005028037,
+      "blue_force": 5553525358085304574,
+      "red_force": 13334035758848253082,
+      "blue_coa": 17535415177493502790,
+      "red_coa": 509396281190712963
+    },
+    "scenario": {
+      "weather": "rain",
+      "visibility": "standard",
+      "zone_strategic_values": {
+        "CITY": 10,
+        "RIDGE": 9,
+        "AIRFIELD": 8
+      }
+    },
+    "blue_force": {
+      "units": {
+        "b1": {
+          "readiness": 0.8549,
+          "supply": 0.7905
+        },
+        "b2": {
+          "readiness": 0.8126,
+          "supply": 0.7405,
+          "location": "RIDGE"
+        },
+        "b3": {
+          "readiness": 0.7517,
+          "supply": 0.7546,
+          "location": "PORT"
+        }
+      }
+    },
+    "red_force": {
+      "units": {
+        "r1": {
+          "readiness": 0.8153,
+          "supply": 0.807
+        },
+        "r2": {
+          "readiness": 0.7838,
+          "supply": 0.7461,
+          "location": "FORWARD_BASE"
+        },
+        "r3": {
+          "supply": 0.8082,
+          "fatigue": 0.091
+        }
+      }
+    },
+    "blue_coa": {
+      "action_variations": {
+        "turn_1_b3": {
+          "action": "move",
+          "target_zone": "PORT",
+          "support_unit_ids": [],
+          "notes": "Delay reserve commitment for one turn."
+        },
+        "turn_4_b1": {
+          "action": "hold",
+          "target_zone": null,
+          "support_unit_ids": [],
+          "notes": "Preserve combat power and hold the city."
+        }
+      }
+    },
+    "red_coa": {
+      "action_variations": {
+        "turn_2_r2": {
+          "action": "attack",
+          "target_zone": "RIDGE",
+          "support_unit_ids": [],
+          "notes": "Secure the ridge before pushing deeper."
+        },
+        "turn_5_r1": {
+          "action": "attack",
+          "target_zone": "CITY",
+          "support_unit_ids": [],
+          "notes": "Final push on the city."
+        }
+      }
+    }
+  }
+}
