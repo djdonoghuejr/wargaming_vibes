@@ -59,3 +59,5 @@ The repository now supports a DuckDB catalog build step that refreshes:
 - comparison summaries
 
 The catalog is intended to become the query layer for selecting approved templates, inspecting experiment history, and comparing outcomes across seeds, COAs, and template families.
+
+`run-batch` now treats catalog approval as an operational gate: selected templates must exist in the DuckDB `approved_templates` view unless the caller explicitly opts out for manual debugging.

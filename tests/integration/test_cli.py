@@ -224,6 +224,53 @@ def test_run_batch_command_writes_runs_and_comparison(tmp_path) -> None:
     assert comparison["sample_count"] == 2
 
 
+def test_run_batch_command_rejects_unapproved_templates(tmp_path) -> None:
+    from shutil import copytree
+
+    templates_dir = tmp_path / "templates"
+    catalog_path = tmp_path / "catalog.duckdb"
+    copytree("data/templates", templates_dir)
+
+    conn = duckdb.connect(str(catalog_path))
+    try:
+        conn.execute(
+            "CREATE TABLE template_quality AS SELECT * FROM (VALUES "
+            "('some_other_template', 'scenario_template', 'approved_for_batch')"
+            ") AS t(template_id, template_kind, approval_state)"
+        )
+        conn.execute(
+            "CREATE VIEW approved_templates AS "
+            "SELECT template_kind, template_id FROM template_quality WHERE approval_state = 'approved_for_batch'"
+        )
+    finally:
+        conn.close()
+
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--output-dir",
+            str(tmp_path / "runs"),
+            "--catalog-path",
+            str(catalog_path),
+            "--scenario-template",
+            str(templates_dir / "scenarios" / "scn_corridor_template_001.json"),
+            "--blue-force-template",
+            str(templates_dir / "force_packages" / "fp_blue_template_001.json"),
+            "--red-force-template",
+            str(templates_dir / "force_packages" / "fp_red_template_001.json"),
+            "--blue-coa-template",
+            str(templates_dir / "coas" / "blue_delay_center_template.json"),
+            "--blue-coa-template",
+            str(templates_dir / "coas" / "blue_mobile_flank_template.json"),
+            "--red-coa-template",
+            str(templates_dir / "coas" / "red_direct_thrust_template.json"),
+        ],
+    )
+    assert result.exit_code == 1
+    assert "requires catalog-approved templates" in result.stdout
+
+
 def test_export_dataset_command_writes_flat_tables(tmp_path) -> None:
     runs_dir = tmp_path / "runs"
     datasets_dir = tmp_path / "datasets"

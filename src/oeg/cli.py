@@ -51,6 +51,7 @@ from oeg.storage.io import persist_comparison_bundle
 from oeg.storage.io import persist_instantiated_assets
 from oeg.storage.io import persist_run_bundle
 from oeg.storage.catalog import build_duckdb_catalog
+from oeg.storage.catalog import load_approved_template_index
 from oeg.storage.export import export_run_dataset
 from oeg.validation.semantic import SemanticValidationError
 from oeg.validation.semantic import validate_asset_bundle
@@ -191,6 +192,34 @@ def _load_generation_requests(request_file: Path) -> list[GenerationRequest]:
     else:
         raise ValueError("Generation request file must be a JSON array or an object with a 'requests' field.")
     return [GenerationRequest.model_validate(item) for item in request_items]
+
+
+def _enforce_template_approvals(
+    catalog_path: Path,
+    scenario_template: ScenarioTemplate,
+    blue_force_template: ForceTemplate,
+    red_force_template: ForceTemplate,
+    blue_coa_templates: list[COATemplate],
+    red_coa_template: COATemplate,
+) -> None:
+    approved = load_approved_template_index(catalog_path)
+    required_templates = [
+        ("scenario_template", scenario_template.id),
+        ("force_template", blue_force_template.id),
+        ("force_template", red_force_template.id),
+        ("coa_template", red_coa_template.id),
+        *[("coa_template", template.id) for template in blue_coa_templates],
+    ]
+    missing = [
+        f"{template_kind}:{template_id}"
+        for template_kind, template_id in required_templates
+        if template_id not in approved.get(template_kind, set())
+    ]
+    if missing:
+        raise ValueError(
+            "Batch execution requires catalog-approved templates. "
+            f"Missing approvals for {missing}. Rebuild the catalog or run with --no-require-approved."
+        )
 
 
 @app.command("validate-assets")
@@ -596,6 +625,12 @@ def run_batch(
     red_coa_template: Path = typer.Option(sample_red_coa_template_path(), exists=True, resolve_path=True),
     seed: list[int] | None = typer.Option(None, min=0),
     sampling_profile: str = typer.Option("hybrid_stochastic_v1"),
+    catalog_path: Path = typer.Option(default_catalog_path(), resolve_path=True),
+    require_approved: bool = typer.Option(
+        True,
+        "--require-approved/--no-require-approved",
+        help="Require all selected templates to be approved in the DuckDB catalog before batch execution.",
+    ),
     output_dir: Path = typer.Option(default_runs_dir(), resolve_path=True),
 ) -> None:
     seed_list = seed or [11, 22, 33]
@@ -616,6 +651,15 @@ def run_batch(
             red_coa_template,
         )
         profile = get_sampling_profile(sampling_profile)
+        if require_approved:
+            _enforce_template_approvals(
+                catalog_path=catalog_path,
+                scenario_template=scenario_template_obj,
+                blue_force_template=blue_force_template_obj,
+                red_force_template=red_force_template_obj,
+                blue_coa_templates=blue_coa_templates,
+                red_coa_template=red_coa_template_obj,
+            )
     except (KeyError, SemanticValidationError, ValueError) as exc:
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc

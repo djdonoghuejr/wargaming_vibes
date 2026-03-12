@@ -81,6 +81,8 @@ oeg instantiate-assets --seed 19 --output-dir data/generated
 oeg run-batch --seed 11 --seed 22 --output-dir data/runs
 ```
 
+By default, `run-batch` requires every selected template to appear in the catalog's `approved_templates` view. Use `--no-require-approved` only for manual debugging or exploratory runs.
+
 10. Export flat JSONL datasets from completed runs.
 
 ```powershell

@@ -116,6 +116,31 @@ def build_duckdb_catalog(
     return manifest
 
 
+def load_approved_template_index(catalog_path: str | Path) -> dict[str, set[str]]:
+    path = Path(catalog_path)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"DuckDB catalog not found at {path}. Build the catalog before running approval-gated batches."
+        )
+
+    conn = duckdb.connect(str(path), read_only=True)
+    try:
+        rows = conn.execute(
+            "SELECT template_kind, template_id FROM approved_templates"
+        ).fetchall()
+    except duckdb.Error as exc:
+        raise RuntimeError(
+            f"Catalog at {path} does not expose approved_templates. Rebuild the catalog and try again."
+        ) from exc
+    finally:
+        conn.close()
+
+    approved: dict[str, set[str]] = {}
+    for template_kind, template_id in rows:
+        approved.setdefault(str(template_kind), set()).add(str(template_id))
+    return approved
+
+
 def _create_table_from_jsonl(conn: duckdb.DuckDBPyConnection, table_name: str, path: Path) -> None:
     if not path.exists():
         conn.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT NULL WHERE FALSE")
