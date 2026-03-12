@@ -13,6 +13,7 @@ from oeg.paths import default_analysis_dir
 from oeg.generators import FileReplayGenerationProvider
 from oeg.generators import GenerationRequest
 from oeg.generators import OfflineGenerationPipeline
+from oeg.generators import OpenAIResponsesGenerationProvider
 from oeg.paths import default_datasets_dir
 from oeg.paths import default_generated_dir
 from oeg.paths import default_runs_dir
@@ -48,6 +49,13 @@ app = typer.Typer(help="Operational Experiment Generator CLI")
 class PlannerMode(str, Enum):
     HEURISTIC = "heuristic"
     COA = "coa"
+
+
+class ReasoningEffort(str, Enum):
+    MINIMAL = "minimal"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 def _default_blue_coas() -> list[Path]:
@@ -159,6 +167,42 @@ def replay_generation_batch(
         raise typer.Exit(code=1) from exc
 
     typer.echo(f"Generation batch complete: {result.batch_id}")
+    typer.echo(
+        f"Promoted={result.promoted_count} quarantined={result.quarantined_count}"
+    )
+    typer.echo(f"Output directory: {output_dir / result.batch_id}")
+
+
+@app.command("generate-live-batch")
+def generate_live_batch(
+    request_file: Path = typer.Option(..., exists=True, resolve_path=True),
+    output_dir: Path = typer.Option(default_generated_dir(), resolve_path=True),
+    model: str = typer.Option("gpt-5-mini"),
+    api_key: str | None = typer.Option(
+        None,
+        envvar="OPENAI_API_KEY",
+        help="OpenAI API key. Defaults to OPENAI_API_KEY if present.",
+    ),
+    temperature: float | None = typer.Option(None, min=0.0, max=2.0),
+    max_output_tokens: int | None = typer.Option(4000, min=1),
+    reasoning_effort: ReasoningEffort | None = typer.Option(None),
+) -> None:
+    try:
+        requests = _load_generation_requests(request_file)
+        provider = OpenAIResponsesGenerationProvider(
+            model=model,
+            api_key=api_key,
+            temperature=temperature,
+            max_output_tokens=max_output_tokens,
+            reasoning_effort=reasoning_effort.value if reasoning_effort else None,
+        )
+        pipeline = OfflineGenerationPipeline(output_dir)
+        result = pipeline.run_batch(requests, provider)
+    except (RuntimeError, ValueError, SemanticValidationError) as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Live generation batch complete: {result.batch_id}")
     typer.echo(
         f"Promoted={result.promoted_count} quarantined={result.quarantined_count}"
     )

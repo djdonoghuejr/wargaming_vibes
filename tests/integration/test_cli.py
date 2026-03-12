@@ -5,6 +5,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+import oeg.cli as cli_module
 from oeg.cli import app
 from oeg.paths import sample_scenario_path
 
@@ -113,6 +114,53 @@ def test_replay_generation_batch_command_promotes_asset(tmp_path) -> None:
             str(request_file),
             "--replay-file",
             str(replay_file),
+            "--output-dir",
+            str(tmp_path / "generated"),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+
+    batch_dirs = [item for item in (tmp_path / "generated").iterdir() if item.is_dir()]
+    assert len(batch_dirs) == 1
+    manifest = json.loads((batch_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["promoted_count"] == 1
+
+
+def test_generate_live_batch_command_promotes_asset_with_fake_provider(tmp_path, monkeypatch) -> None:
+    request_file = tmp_path / "requests.json"
+    template_file = tmp_path / "scenario_prompt.md"
+    template_file.write_text("Generate scenario for {scenario_family}.", encoding="utf-8")
+    request_file.write_text(
+        json.dumps(
+            [
+                {
+                    "request_id": "scenario_batch",
+                    "asset_kind": "scenario",
+                    "template_path": str(template_file),
+                    "count": 1,
+                    "context": {"scenario_family": "corridor_delay"}
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    class FakeLiveProvider:
+        def __init__(self, **_: object) -> None:
+            self._payload = sample_scenario_path().read_text(encoding="utf-8")
+
+        def generate(self, prompt: str, request, iteration: int) -> str:
+            del prompt, request, iteration
+            return self._payload
+
+    monkeypatch.setattr(cli_module, "OpenAIResponsesGenerationProvider", FakeLiveProvider)
+
+    result = runner.invoke(
+        app,
+        [
+            "generate-live-batch",
+            "--request-file",
+            str(request_file),
             "--output-dir",
             str(tmp_path / "generated"),
         ],

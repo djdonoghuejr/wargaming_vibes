@@ -5,6 +5,7 @@ from oeg.generators.models import GenerationRequest
 from oeg.generators.offline import OfflineGenerationPipeline
 from oeg.generators.provider import FileReplayGenerationProvider
 from oeg.generators.provider import GenerationProvider
+from oeg.generators.provider import OpenAIResponsesGenerationProvider
 from oeg.generators.provider import StaticGenerationProvider
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "GenerationRequest",
     "OfflineGenerationPipeline",
     "FileReplayGenerationProvider",
+    "OpenAIResponsesGenerationProvider",
     "StaticGenerationProvider",
 ]

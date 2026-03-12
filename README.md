@@ -15,7 +15,7 @@ The current repository implements the first deterministic slice:
 - semantic validation for scenarios, force packages, and COAs
 - a turn-based simulation engine with deterministic seeded adjudication
 - runtime planners with side-specific state inputs
-- an offline generation replay pipeline with promotion and quarantine handling
+- an offline generation pipeline with replay and live model-backed providers
 - structured JSON and JSONL outputs for runs and comparisons
 - cross-run lesson aggregation and run-quality scoring
 - a CLI for validation, single-run execution, and COA comparison
@@ -60,19 +60,26 @@ oeg run-runtime-demo --output-dir data/runs
 oeg replay-generation-batch --request-file path/to/requests.json --replay-file path/to/replay.json --output-dir data/generated
 ```
 
-7. Export flat JSONL datasets from completed runs.
+7. Generate a live offline batch with an OpenAI model.
+
+```powershell
+$env:OPENAI_API_KEY = "sk-..."
+oeg generate-live-batch --request-file path/to/requests.json --model gpt-5-mini --output-dir data/generated
+```
+
+8. Export flat JSONL datasets from completed runs.
 
 ```powershell
 oeg export-dataset --runs-dir data/runs --output-dir data/datasets
 ```
 
-8. Aggregate lessons across completed runs.
+9. Aggregate lessons across completed runs.
 
 ```powershell
 oeg aggregate-lessons --runs-dir data/runs --output-dir data/analysis
 ```
 
-9. Score completed runs for output quality.
+10. Score completed runs for output quality.
 
 ```powershell
 oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
@@ -94,7 +101,7 @@ oeg evaluate-runs --runs-dir data/runs --output-dir data/analysis
 
 ## Immediate Next Steps
 
-- add a live model-backed provider to the offline generation pipeline
 - deepen fog-of-war mechanics and planner-side belief state
 - add dataset export and DuckDB cataloging
 - add prompt contracts and evaluation harnesses
+- add a lightweight run viewer over exported datasets
